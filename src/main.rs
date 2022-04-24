@@ -1,5 +1,3 @@
-#![feature(cell_filter_map)]
-
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{cookie::Key, web, App, HttpServer};
 
