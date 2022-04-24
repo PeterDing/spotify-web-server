@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  schedule:
+    - cron: "2 2 2 * *"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test
+    strategy:
+      matrix:
+        build:
+          - linux
+          - windows
+          - mac
+          - mac-aarch64
+        include:
+          - build: linux
+            os: ubuntu-latest
+            rust: "stable"
+          - build: windows
+            os: windows-latest
+            rust: "stable"
+          - build: mac
+            os: macos-latest
+            rust: "stable"
+          - build: mac-aarch64
+            os: macos-latest
+            rust: "stable"
+            target: aarch64-apple-darwin
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          profile: minimal
+          override: true
+
+      - name: Install aarch64 toolchain
+        if: matrix.target == 'aarch64-apple-darwin'
+        run: rustup target add aarch64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v1
+
+      - name: Build
+        if: matrix.target != 'aarch64-apple-darwin'
+        run: cargo build --verbose
+
+      - name: Build aarch64
+        if: matrix.target == 'aarch64-apple-darwin'
+        run: cargo build --target=aarch64-apple-darwin --verbose
+
+      - name: Tests
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cargo test --verbose
