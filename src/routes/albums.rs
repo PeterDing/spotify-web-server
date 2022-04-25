@@ -14,6 +14,7 @@ use crate::{
     session::ServerSession,
 };
 
+/// Album Ids
 #[derive(serde::Deserialize)]
 pub struct IdsQueryData {
     ids: String,
@@ -30,6 +31,7 @@ impl IdsQueryData {
     }
 }
 
+/// Path: GET `/albums`
 pub async fn albums(
     query: web::Query<IdsQueryData>,
     app_store: web::Data<AppStore>,
@@ -42,13 +44,14 @@ pub async fn albums(
     json_response(&result)
 }
 
+/// Page Query Data
 #[derive(serde::Deserialize)]
 pub struct PageQueryData {
     limit: Option<u32>,
     offset: Option<u32>,
 }
 
-#[get("/albums/{id}/tracks")]
+/// Path: GET `/albums/{id}/tracks`
 pub async fn album_tracks(
     id: web::Path<String>,
     query: web::Query<PageQueryData>,
@@ -101,7 +104,7 @@ async fn page_tracks(
     Ok(page)
 }
 
-// #[get("/me/albums")]
+/// Path: GET `/me/albums`
 pub async fn saved_albums(
     query: web::Query<PageQueryData>,
     app_store: web::Data<AppStore>,
@@ -146,7 +149,7 @@ async fn page_saved_albums(
     Ok(page)
 }
 
-#[put("me/albums")]
+/// Path: PUT `/me/albums`
 pub async fn save_albums(
     query: web::Query<IdsQueryData>,
     app_store: web::Data<AppStore>,
@@ -162,7 +165,7 @@ pub async fn save_albums(
     ok_response()
 }
 
-#[delete("me/albums")]
+/// Path: DELETE `/me/albums`
 pub async fn delete_albums(
     query: web::Query<IdsQueryData>,
     app_store: web::Data<AppStore>,
@@ -178,7 +181,7 @@ pub async fn delete_albums(
     ok_response()
 }
 
-#[get("/browse/new-releases")]
+/// Path: GET `/browse/new-releases`
 pub async fn new_releases(
     query: web::Query<PageQueryData>,
     app_store: web::Data<AppStore>,
@@ -210,6 +213,7 @@ async fn all_new_releases(account: &SpotifyAccount) -> Result<Vec<SimplifiedAlbu
     Ok(albums)
 }
 
+/// New releases albums by page
 async fn page_new_releases(
     account: &SpotifyAccount,
     limit: Option<u32>,
