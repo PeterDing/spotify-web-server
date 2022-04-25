@@ -1,9 +1,7 @@
 use actix_web::{web, HttpResponse};
 
 use crate::{
-    app_store::{AppStore, SpotifyAccount},
-    errors::ServerError,
-    session::ServerSession,
+    account::SpotifyAccount, app_store::AppStore, errors::ServerError, session::ServerSession,
 };
 
 #[derive(serde::Deserialize)]

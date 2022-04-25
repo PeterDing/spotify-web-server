@@ -1,9 +1,7 @@
 use tokio::sync::RwLockReadGuard;
 
 use crate::{
-    app_store::{AppStore, SpotifyAccount},
-    errors::ServerError,
-    session::ServerSession,
+    account::SpotifyAccount, app_store::AppStore, errors::ServerError, session::ServerSession,
 };
 
 pub async fn authorize<'a>(

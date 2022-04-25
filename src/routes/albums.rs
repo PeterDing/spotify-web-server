@@ -1,6 +1,6 @@
 use futures::StreamExt;
 
-use actix_web::{delete, get, put, web, HttpResponse};
+use actix_web::{web, HttpResponse};
 
 use rspotify::{
     clients::{BaseClient, OAuthClient},
@@ -8,7 +8,8 @@ use rspotify::{
 };
 
 use crate::{
-    app_store::{AppStore, SpotifyAccount},
+    account::SpotifyAccount,
+    app_store::AppStore,
     errors::ServerError,
     routes::utils::{json_response, ok_response},
     session::ServerSession,

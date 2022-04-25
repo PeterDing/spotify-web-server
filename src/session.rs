@@ -3,7 +3,7 @@ use std::future::{ready, Ready};
 use actix_session::{Session, SessionExt};
 use actix_web::{dev::Payload, FromRequest, HttpRequest};
 
-use crate::{app_store::UserName, errors::ServerError};
+use crate::{account::UserName, errors::ServerError};
 
 pub struct ServerSession(Session);
 
@@ -30,7 +30,7 @@ impl FromRequest for ServerSession {
 
     type Future = Ready<Result<ServerSession, Self::Error>>;
 
-    fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
+    fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
         ready(Ok(ServerSession(req.get_session())))
     }
 }
