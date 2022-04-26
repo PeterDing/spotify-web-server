@@ -21,7 +21,10 @@ impl AppStore {
 
         let account = RwLockReadGuard::try_map(spotify_accounts, |sa| sa.get_account(username));
         match account {
-            Ok(a) => Ok(a),
+            Ok(a) => {
+                a.update_token().await?;
+                Ok(a)
+            }
             Err(_) => Err(ServerError::AuthenticationError),
         }
     }
