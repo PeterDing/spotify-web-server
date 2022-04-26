@@ -11,7 +11,9 @@ pub enum ServerError {
     #[error("No Login Error")]
     NoLoginError,
     #[error("Inner Error: {0}")]
-    InnerError(#[from] serde_json::Error),
+    InnerError(String),
+    #[error("Serde Error: {0}")]
+    SerdeError(#[from] serde_json::Error),
     #[error("Spotify Client Error: {0}")]
     ClientError(#[from] ClientError),
     #[error("Spotify Request Error: {0}")]
@@ -22,6 +24,8 @@ pub enum ServerError {
     TokenError(MercuryError),
     #[error("Params Error: {0}")]
     ParamsError(String),
+    #[error("IO Error: {0}")]
+    IOError(#[from] std::io::Error),
 }
 
 impl From<MercuryError> for ServerError {
