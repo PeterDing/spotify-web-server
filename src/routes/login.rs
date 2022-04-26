@@ -1,13 +1,26 @@
+use std::path::Path;
+
 use actix_web::{web, HttpResponse};
 
+use librespot::core::authentication::Credentials;
+
 use crate::{
-    account::SpotifyAccount, app_store::AppStore, errors::ServerError, session::ServerSession,
+    account::{
+        utils::{load_credentials, CONFIG_ROOT},
+        SpotifyAccount, UserName,
+    },
+    app_store::AppStore,
+    errors::ServerError,
+    session::ServerSession,
 };
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
     username: String,
     password: String,
+    // 1: using cache
+    // else: no using cache
+    cache: Option<u8>,
 }
 
 pub async fn login(
@@ -15,10 +28,55 @@ pub async fn login(
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
-    let account = SpotifyAccount::login(form.username.clone(), form.password.clone()).await?;
+    let to_cache = form.cache.map(|v| if v == 1 { v } else { 0 }).unwrap_or(0);
+
+    let cache_dir = match to_cache {
+        1 => Some(Path::new(CONFIG_ROOT).join(&form.username)),
+        _ => None,
+    };
+
+    let credentials = if let Some(ref cd) = cache_dir {
+        load_credentials(cd).unwrap_or_else(|| {
+            Credentials::with_password(form.username.clone(), form.password.clone())
+        })
+    } else {
+        Credentials::with_password(form.username.clone(), form.password.clone())
+    };
+
+    let account = SpotifyAccount::create(credentials, cache_dir).await?;
     app_store
         .insert_account(form.username.clone(), account)
         .await;
     session.insert_username(&form.username)?;
     Ok(HttpResponse::Ok().finish())
+}
+
+#[derive(serde::Deserialize)]
+pub struct UserNameQueryData {
+    username: Option<String>,
+}
+
+pub async fn miracle(
+    query: web::Query<UserNameQueryData>,
+    app_store: web::Data<AppStore>,
+    session: ServerSession,
+) -> Result<HttpResponse, ServerError> {
+    if let Some(username) = &query.username {
+        let accounts = app_store.spotify_accounts.read().await;
+        if accounts.contains_key(&UserName::from(username.as_str())) {
+            session.insert_username(&username)?;
+            Ok(HttpResponse::Ok().finish())
+        } else {
+            Err(ServerError::NoLoginError)
+        }
+    } else {
+        let accounts = app_store.spotify_accounts.read().await;
+        let username = accounts.keys().into_iter().next();
+        if let Some(one) = username {
+            session.insert_username(one.as_ref())?;
+            Ok(HttpResponse::Ok().finish())
+        } else {
+            Err(ServerError::NoLoginError)
+        }
+    }
 }
