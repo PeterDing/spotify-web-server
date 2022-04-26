@@ -24,6 +24,22 @@ struct Expiration {
     token_expiration: DateTime<Utc>,
 }
 
+impl Expiration {
+    fn update_expires_in(&mut self, seconds: i64) {
+        self.expires_in = seconds;
+        self.token_expiration = Utc::now();
+    }
+}
+
+impl Default for Expiration {
+    fn default() -> Self {
+        Expiration {
+            expires_in: 0,
+            token_expiration: Utc::now(),
+        }
+    }
+}
+
 pub struct SpotifyAccount {
     pub credentials: Credentials,
     pub session: Session,
@@ -40,10 +56,7 @@ impl SpotifyAccount {
             credentials,
             session,
             client,
-            expiration: RwLock::new(Expiration {
-                expires_in: 0,
-                token_expiration: Utc::now(),
-            }),
+            expiration: RwLock::new(Expiration::default()),
         };
 
         Ok(account)
@@ -88,8 +101,7 @@ impl SpotifyAccount {
             refresh_token: None,
         });
 
-        expiration.expires_in = token.expires_in as i64;
-        expiration.token_expiration = Utc::now();
+        expiration.update_expires_in(token.expires_in as i64);
         Ok(())
     }
 }
@@ -116,27 +128,23 @@ impl AsRef<str> for UserName {
     }
 }
 
-/// Spotify Accounts as HashMap
+/// Spotify Accounts at HashMap
 #[derive(Default)]
 pub struct SpotifyAccounts {
     inner: HashMap<UserName, SpotifyAccount>,
 }
 
 impl SpotifyAccounts {
-    pub fn get_account(&self, username: impl Into<UserName>) -> Option<&SpotifyAccount> {
+    pub fn get(&self, username: impl Into<UserName>) -> Option<&SpotifyAccount> {
         self.inner.get(&username.into())
     }
 
-    pub fn insert_account(&mut self, username: impl Into<UserName>, account: SpotifyAccount) {
+    pub fn insert(&mut self, username: impl Into<UserName>, account: SpotifyAccount) {
         self.inner.insert(username.into(), account);
     }
 
-    pub fn contains_key(&self, key: &UserName) -> bool {
-        self.inner.contains_key(key)
-    }
-
-    pub fn get(&self, key: &UserName) -> Option<&SpotifyAccount> {
-        self.inner.get(key)
+    pub fn contains_key(&self, username: &UserName) -> bool {
+        self.inner.contains_key(username)
     }
 
     pub fn keys(&self) -> impl IntoIterator<Item = &UserName> {

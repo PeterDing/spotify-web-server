@@ -31,7 +31,6 @@ impl ServerSession {
 
 impl FromRequest for ServerSession {
     type Error = <Session as FromRequest>::Error;
-
     type Future = Ready<Result<ServerSession, Self::Error>>;
 
     fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
