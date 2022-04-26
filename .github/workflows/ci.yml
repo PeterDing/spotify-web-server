@@ -61,7 +61,7 @@ jobs:
         if: matrix.target == 'aarch64-apple-darwin'
         run: cargo build --target=aarch64-apple-darwin --verbose
 
-      - name: Tests
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          cargo test --verbose
+      # - name: Tests
+      #   if: matrix.os == 'ubuntu-latest'
+      #   run: |
+      #     cargo test --verbose
