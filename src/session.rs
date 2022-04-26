@@ -12,12 +12,16 @@ impl ServerSession {
 
     pub fn get_username(&self) -> Result<UserName, ServerError> {
         self.0
-            .get(Self::USERNAME_KEY)?
+            .get(Self::USERNAME_KEY)
+            .map_err(|e| ServerError::InnerError(format!("serde error: {:?}", e)))?
             .ok_or(ServerError::NoLoginError)
     }
 
     pub fn insert_username(&self, username: &str) -> Result<(), ServerError> {
-        Ok(self.0.insert(Self::USERNAME_KEY, username)?)
+        Ok(self
+            .0
+            .insert(Self::USERNAME_KEY, username)
+            .map_err(|e| ServerError::InnerError(format!("serde error: {:?}", e)))?)
     }
 
     pub fn log_out(&self) {
