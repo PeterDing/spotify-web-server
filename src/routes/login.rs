@@ -11,20 +11,12 @@ use crate::{
     },
     app_store::AppStore,
     errors::ServerError,
+    routes::params::{LoginFormData, UserNameQueryData},
     session::ServerSession,
 };
 
-#[derive(serde::Deserialize)]
-pub struct FormData {
-    username: String,
-    password: String,
-    // 1: using cache
-    // else: no using cache
-    cache: Option<u8>,
-}
-
 pub async fn login(
-    form: web::Form<FormData>,
+    form: web::Form<LoginFormData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -49,11 +41,6 @@ pub async fn login(
         .await;
     session.insert_username(&form.username)?;
     Ok(HttpResponse::Ok().finish())
-}
-
-#[derive(serde::Deserialize)]
-pub struct UserNameQueryData {
-    username: Option<String>,
 }
 
 pub async fn miracle(

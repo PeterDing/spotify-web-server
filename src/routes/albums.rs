@@ -11,26 +11,12 @@ use crate::{
     account::SpotifyAccount,
     app_store::AppStore,
     errors::ServerError,
-    routes::utils::{json_response, ok_response},
+    routes::{
+        params::{IdsQueryData, PageQueryData},
+        utils::{json_response, ok_response},
+    },
     session::ServerSession,
 };
-
-/// Album Ids
-#[derive(serde::Deserialize)]
-pub struct IdsQueryData {
-    ids: String,
-}
-
-impl IdsQueryData {
-    fn album_ids(&self) -> Vec<AlbumId> {
-        self.ids
-            .split(',')
-            .map(AlbumId::from_id)
-            .filter(|id| id.is_ok())
-            .map(|id| id.unwrap())
-            .collect()
-    }
-}
 
 /// Path: GET `/albums`
 pub async fn albums(
@@ -41,15 +27,8 @@ pub async fn albums(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
-    let result = account.client.albums(query.album_ids().iter()).await?;
+    let result = account.client.albums(query.ids().iter()).await?;
     json_response(&result)
-}
-
-/// Page Query Data
-#[derive(serde::Deserialize)]
-pub struct PageQueryData {
-    limit: Option<u32>,
-    offset: Option<u32>,
 }
 
 /// Path: GET `/albums/{id}/tracks`
@@ -161,7 +140,7 @@ pub async fn save_albums(
 
     account
         .client
-        .current_user_saved_albums_add(query.album_ids().iter())
+        .current_user_saved_albums_add(query.ids().iter())
         .await?;
     ok_response()
 }
@@ -177,7 +156,7 @@ pub async fn delete_albums(
 
     account
         .client
-        .current_user_saved_albums_delete(query.album_ids().iter())
+        .current_user_saved_albums_delete(query.ids().iter())
         .await?;
     ok_response()
 }

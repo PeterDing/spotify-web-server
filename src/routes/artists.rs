@@ -8,26 +8,15 @@ use rspotify::{
 };
 
 use crate::{
-    account::SpotifyAccount, app_store::AppStore, errors::ServerError,
-    routes::utils::json_response, session::ServerSession,
+    account::SpotifyAccount,
+    app_store::AppStore,
+    errors::ServerError,
+    routes::{
+        params::{IdsQueryData, PageQueryData},
+        utils::json_response,
+    },
+    session::ServerSession,
 };
-
-/// Artist Ids
-#[derive(serde::Deserialize)]
-pub struct IdsQueryData {
-    ids: String,
-}
-
-impl IdsQueryData {
-    fn artist_ids(&self) -> Vec<ArtistId> {
-        self.ids
-            .split(',')
-            .map(ArtistId::from_id)
-            .filter(|id| id.is_ok())
-            .map(|id| id.unwrap())
-            .collect()
-    }
-}
 
 /// Path: GET `/artists`
 pub async fn artists(
@@ -38,15 +27,8 @@ pub async fn artists(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
-    let result = account.client.artists(query.artist_ids().iter()).await?;
+    let result = account.client.artists(query.ids().iter()).await?;
     json_response(&result)
-}
-
-/// Page Query Data
-#[derive(serde::Deserialize)]
-pub struct PageQueryData {
-    limit: Option<u32>,
-    offset: Option<u32>,
 }
 
 /// Path: GET `/artists/{id}/albums`

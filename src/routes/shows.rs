@@ -11,26 +11,12 @@ use crate::{
     account::SpotifyAccount,
     app_store::AppStore,
     errors::ServerError,
-    routes::utils::{json_response, ok_response},
+    routes::{
+        params::{IdsQueryData, PageQueryData},
+        utils::{json_response, ok_response},
+    },
     session::ServerSession,
 };
-
-/// Show Ids
-#[derive(serde::Deserialize)]
-pub struct IdsQueryData {
-    ids: String,
-}
-
-impl IdsQueryData {
-    fn show_ids<T: Id>(&self) -> Vec<T> {
-        self.ids
-            .split(',')
-            .map(T::from_id)
-            .filter(|id| id.is_ok())
-            .map(|id| id.unwrap())
-            .collect()
-    }
-}
 
 /// Path: GET `/shows`
 pub async fn shows(
@@ -41,25 +27,15 @@ pub async fn shows(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
-    let show_ids = query.show_ids();
+    let ids = query.ids();
 
-    if show_ids.len() == 1 {
-        let result = account.client.get_a_show(&show_ids[0], None).await?;
+    if ids.len() == 1 {
+        let result = account.client.get_a_show(&ids[0], None).await?;
         json_response(&result)
     } else {
-        let result = account
-            .client
-            .get_several_shows(show_ids.iter(), None)
-            .await?;
+        let result = account.client.get_several_shows(ids.iter(), None).await?;
         json_response(&result)
     }
-}
-
-/// Page Query Data
-#[derive(serde::Deserialize)]
-pub struct PageQueryData {
-    limit: Option<u32>,
-    offset: Option<u32>,
 }
 
 /// Path: GET `/shows/{id}/episodes`
@@ -166,7 +142,7 @@ pub async fn save_shows(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
-    account.client.save_shows(query.show_ids().iter()).await?;
+    account.client.save_shows(query.ids().iter()).await?;
     ok_response()
 }
 
@@ -181,7 +157,7 @@ pub async fn delete_shows(
 
     account
         .client
-        .remove_users_saved_shows(query.show_ids().iter(), None)
+        .remove_users_saved_shows(query.ids().iter(), None)
         .await?;
     ok_response()
 }
