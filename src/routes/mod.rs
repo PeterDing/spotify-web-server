@@ -4,6 +4,7 @@ mod auth;
 mod health_check;
 mod login;
 mod search;
+mod shows;
 mod utils;
 
 pub use health_check::health_check;
@@ -41,4 +42,10 @@ pub fn route() -> actix_web::Scope {
             "/artists/{id}/related-artists",
             web::get().to(artists::artist_related_artists),
         )
+        // Shows apis
+        .route("/shows", web::get().to(shows::shows))
+        .route("/shows/{id}/episodes", web::get().to(shows::show_episodes))
+        .route("/me/shows", web::get().to(shows::saved_shows))
+        .route("/me/shows", web::put().to(shows::save_shows))
+        .route("/me/shows", web::delete().to(shows::delete_shows))
 }
