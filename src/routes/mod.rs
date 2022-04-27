@@ -1,8 +1,10 @@
 mod albums;
 mod artists;
 mod auth;
+mod episodes;
 mod health_check;
 mod login;
+mod params;
 mod search;
 mod shows;
 mod utils;
@@ -48,4 +50,9 @@ pub fn route() -> actix_web::Scope {
         .route("/me/shows", web::get().to(shows::saved_shows))
         .route("/me/shows", web::put().to(shows::save_shows))
         .route("/me/shows", web::delete().to(shows::delete_shows))
+        // Episodes apis
+        .route("/episodes", web::get().to(episodes::episodes))
+        .route("/me/episodes", web::get().to(episodes::saved_episodes))
+        .route("/me/episodes", web::put().to(episodes::save_episodes))
+        .route("/me/episodes", web::delete().to(episodes::delete_episodes))
 }
