@@ -18,6 +18,22 @@ use crate::{
     session::ServerSession,
 };
 
+/// Path: GET `/artists/{id}`
+pub async fn artist(
+    id: web::Path<String>,
+    app_store: web::Data<AppStore>,
+    session: ServerSession,
+) -> Result<HttpResponse, ServerError> {
+    let username = session.get_username()?;
+    let account = app_store.authorize(username).await?;
+
+    let artist_id = ArtistId::from_id(id.as_str())
+        .map_err(|_| ServerError::ParamsError(format!("Invalid artist id: {}", id.as_str())))?;
+
+    let result = account.client.artist(&artist_id).await?;
+    json_response(&result)
+}
+
 /// Path: GET `/artists`
 pub async fn artists(
     query: web::Query<IdsQueryData>,

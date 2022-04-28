@@ -18,6 +18,22 @@ use crate::{
     session::ServerSession,
 };
 
+/// Path: GET `/shows/{id}`
+pub async fn show(
+    id: web::Path<String>,
+    app_store: web::Data<AppStore>,
+    session: ServerSession,
+) -> Result<HttpResponse, ServerError> {
+    let username = session.get_username()?;
+    let account = app_store.authorize(username).await?;
+
+    let show_id = ShowId::from_id(id.as_str())
+        .map_err(|_| ServerError::ParamsError(format!("Invalid show id: {}", id.as_str())))?;
+
+    let result = account.client.get_a_show(&show_id, None).await?;
+    json_response(&result)
+}
+
 /// Path: GET `/shows`
 pub async fn shows(
     query: web::Query<IdsQueryData>,
@@ -27,15 +43,11 @@ pub async fn shows(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
-    let ids = query.ids();
-
-    if ids.len() == 1 {
-        let result = account.client.get_a_show(&ids[0], None).await?;
-        json_response(&result)
-    } else {
-        let result = account.client.get_several_shows(ids.iter(), None).await?;
-        json_response(&result)
-    }
+    let result = account
+        .client
+        .get_several_shows(query.ids().iter(), None)
+        .await?;
+    json_response(&result)
 }
 
 /// Path: GET `/shows/{id}/episodes`

@@ -1,9 +1,16 @@
-use actix_web::{http::header::ContentType, HttpResponse};
+use actix_web::{body::MessageBody, http::header::ContentType, HttpResponse};
 
 use crate::errors::ServerError;
 
 pub fn ok_response() -> Result<HttpResponse, ServerError> {
     Ok(HttpResponse::Ok().finish())
+}
+
+pub fn ok_with_body_response<B>(body: B) -> Result<HttpResponse, ServerError>
+where
+    B: MessageBody + 'static,
+{
+    Ok(HttpResponse::Ok().body(body))
 }
 
 pub fn json_response(obj: impl serde::Serialize) -> Result<HttpResponse, ServerError> {

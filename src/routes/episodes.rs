@@ -2,7 +2,11 @@ use std::collections::HashMap;
 
 use actix_web::{http::header::ContentType, web, HttpResponse};
 
-use rspotify::{clients::BaseClient, model::Market, ClientError};
+use rspotify::{
+    clients::BaseClient,
+    model::{EpisodeId, Id, Market},
+    ClientError,
+};
 
 use crate::{
     account::SpotifyAccount,
@@ -15,6 +19,22 @@ use crate::{
     session::ServerSession,
 };
 
+/// Path: GET `/episodes/{id}`
+pub async fn episode(
+    id: web::Path<String>,
+    app_store: web::Data<AppStore>,
+    session: ServerSession,
+) -> Result<HttpResponse, ServerError> {
+    let username = session.get_username()?;
+    let account = app_store.authorize(username).await?;
+
+    let episode_id = EpisodeId::from_id(id.as_str())
+        .map_err(|_| ServerError::ParamsError(format!("Invalid episode id: {}", id.as_str())))?;
+
+    let result = account.client.get_an_episode(&episode_id, None).await?;
+    json_response(&result)
+}
+
 /// Path: GET `/episodes`
 pub async fn episodes(
     query: web::Query<IdsQueryData>,
@@ -24,18 +44,11 @@ pub async fn episodes(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
-    let ids = query.ids();
-
-    if ids.len() == 1 {
-        let result = account.client.get_an_episode(&ids[0], None).await?;
-        json_response(&result)
-    } else {
-        let result = account
-            .client
-            .get_several_episodes(ids.iter(), None)
-            .await?;
-        json_response(&result)
-    }
+    let result = account
+        .client
+        .get_several_episodes(query.ids().iter(), None)
+        .await?;
+    json_response(&result)
 }
 
 /// Path: GET `/me/episodes`
