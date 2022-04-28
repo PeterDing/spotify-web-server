@@ -4,6 +4,11 @@ use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{cookie::Key, web, App, HttpServer};
 
 use librespot::core::cache::Cache;
+
+use tracing_actix_web::TracingLogger;
+use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
+use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
+
 use spotify_web_server::{
     account::{
         utils::{load_credentials, CONFIG_ROOT},
@@ -39,10 +44,19 @@ async fn init_app_store() -> AppStore {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let bunyan_formatting_layer =
+        BunyanFormattingLayer::new(env!("CARGO_PKG_NAME").to_string(), std::io::stdout);
+    let subscriber = Registry::default()
+        .with(EnvFilter::new("info"))
+        .with(JsonStorageLayer)
+        .with(bunyan_formatting_layer);
+    tracing::subscriber::set_global_default(subscriber).unwrap();
+
     let app_store = web::Data::new(init_app_store().await);
 
     HttpServer::new(move || {
         App::new()
+            .wrap(TracingLogger::default())
             .wrap(SessionMiddleware::new(
                 CookieSessionStore::default(),
                 Key::from(SECRET_KEY.as_bytes()),

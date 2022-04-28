@@ -17,6 +17,7 @@ path = "src/main.rs"
 # Async
 futures = "0.3"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "signal", "sync", "process"] }
+async-stream = "0.3.3"
 actix-web = { version = "4", features = ["secure-cookies"] }
 actix-session = { version = "0.6", features = ["cookie-session"] }
 
@@ -31,3 +32,10 @@ thiserror = "1"
 anyhow = "1"
 url = "2"
 toml = "0.5"
+
+# Tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["registry", "env-filter"] }
+tracing-bunyan-formatter = "0.3"
+tracing-appender = "0.2"
+tracing-actix-web = "0.5"
