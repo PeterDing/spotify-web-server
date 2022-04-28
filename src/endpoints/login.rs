@@ -10,8 +10,8 @@ use crate::{
         SpotifyAccount, UserName,
     },
     app_store::AppStore,
+    endpoints::params::{LoginFormData, UserNameQueryData},
     errors::ServerError,
-    routes::params::{LoginFormData, UserNameQueryData},
     session::ServerSession,
 };
 

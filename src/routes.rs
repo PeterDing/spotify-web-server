@@ -1,30 +1,17 @@
-mod albums;
-mod artists;
-mod audios;
-mod auth;
-mod episodes;
-mod health_check;
-mod login;
-mod params;
-mod search;
-mod shows;
-mod tracks;
-mod utils;
-
-pub use health_check::health_check;
-pub use login::{login, miracle};
-pub use search::search;
+use crate::endpoints::{
+    albums, artists, audios, episodes, health_check, login, search, shows, tracks,
+};
 
 use actix_web::web;
 
 pub fn route() -> actix_web::Scope {
     web::scope("")
-        .route("/health_check", web::get().to(health_check))
+        .route("/health_check", web::get().to(health_check::health_check))
         // Login api
-        .route("/login", web::post().to(login))
-        .route("/miracle", web::get().to(miracle))
+        .route("/login", web::post().to(login::login))
+        .route("/miracle", web::get().to(login::miracle))
         // Search api
-        .route("/search", web::get().to(search))
+        .route("/search", web::get().to(search::search))
         // Albums apis
         .route("/albums/{id}", web::get().to(albums::album))
         .route("/albums", web::get().to(albums::albums))

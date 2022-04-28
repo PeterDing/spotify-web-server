@@ -1,41 +1,14 @@
-use core::task::{Context, Poll};
-use std::{
-    collections::HashSet,
-    io::{Read, Seek, SeekFrom},
-    pin::Pin,
-};
+use std::io::{Read, Seek, SeekFrom};
 
-use futures::{Stream, StreamExt};
-
-use actix_web::{
-    web::{self, Bytes},
-    HttpResponse,
-};
-
-use rspotify::{
-    clients::{BaseClient, OAuthClient},
-    model::{Id, Page, SavedTrack, TrackId},
-};
+use actix_web::{web, HttpResponse};
 
 use librespot::{
     audio::{AudioDecrypt, AudioFile},
-    core::{
-        authentication::Credentials, cache::Cache, config::SessionConfig, keymaster,
-        session::Session, spotify_id::SpotifyId,
-    },
-    metadata::{Album, AudioItem, FileFormat, Metadata},
+    core::spotify_id::SpotifyId,
+    metadata::{AudioItem, FileFormat},
 };
 
-use crate::{
-    account::SpotifyAccount,
-    app_store::AppStore,
-    errors::ServerError,
-    routes::{
-        params::{IdsQueryData, PageQueryData},
-        utils::{json_response, ok_response},
-    },
-    session::ServerSession,
-};
+use crate::{app_store::AppStore, errors::ServerError, session::ServerSession};
 
 use super::utils::ok_with_body_response;
 

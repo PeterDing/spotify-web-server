@@ -3,7 +3,7 @@ use actix_web::{http::header::ContentType, web, HttpResponse};
 use rspotify::clients::BaseClient;
 
 use crate::{
-    app_store::AppStore, errors::ServerError, routes::params::SearchQueryData,
+    app_store::AppStore, endpoints::params::SearchQueryData, errors::ServerError,
     session::ServerSession,
 };
 
