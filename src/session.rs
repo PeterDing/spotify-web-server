@@ -18,10 +18,9 @@ impl ServerSession {
     }
 
     pub fn insert_username(&self, username: &str) -> Result<(), ServerError> {
-        Ok(self
-            .0
+        self.0
             .insert(Self::USERNAME_KEY, username)
-            .map_err(|e| ServerError::InnerError(format!("serde error: {:?}", e)))?)
+            .map_err(|e| ServerError::InnerError(format!("serde error: {:?}", e)))
     }
 
     pub fn log_out(&self) {

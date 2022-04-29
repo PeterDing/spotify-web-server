@@ -50,7 +50,7 @@ pub struct SpotifyAccount {
 impl SpotifyAccount {
     pub async fn new(credentials: Credentials, cache: Cache) -> Result<Self, ServerError> {
         let config = SessionConfig::default();
-        let session = Session::connect(config.into(), credentials.clone(), Some(cache)).await?;
+        let session = Session::connect(config, credentials.clone(), Some(cache)).await?;
         let client: AuthCodeSpotify = AuthCodeSpotify::default();
         let account = SpotifyAccount {
             credentials,
@@ -148,6 +148,6 @@ impl SpotifyAccounts {
     }
 
     pub fn keys(&self) -> impl IntoIterator<Item = &UserName> {
-        self.inner.keys().map(|k| k).into_iter()
+        self.inner.keys()
     }
 }

@@ -51,7 +51,7 @@ pub async fn miracle(
     if let Some(username) = &query.username {
         let accounts = app_store.spotify_accounts.read().await;
         if accounts.contains_key(&UserName::from(username.as_str())) {
-            session.insert_username(&username)?;
+            session.insert_username(username)?;
             Ok(HttpResponse::Ok().finish())
         } else {
             Err(ServerError::NoLoginError)

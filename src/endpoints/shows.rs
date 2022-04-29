@@ -10,11 +10,11 @@ use rspotify::{
 use crate::{
     account::SpotifyAccount,
     app_store::AppStore,
+    errors::ServerError,
     endpoints::{
         params::{IdsQueryData, PageQueryData},
         utils::{json_response, ok_response},
     },
-    errors::ServerError,
     session::ServerSession,
 };
 

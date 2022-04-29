@@ -24,18 +24,19 @@ async fn init_app_store() -> AppStore {
     let app_store = AppStore::default();
 
     let config_dir = Path::new(CONFIG_ROOT);
-    for entry in config_dir.read_dir().expect("No config directory") {
-        if let Ok(entry) = entry {
-            let config_dir = entry.path();
-            if let Some(credentials) = load_credentials(config_dir.clone()) {
-                let username = config_dir.file_name().unwrap().to_str().unwrap();
-                let cache =
-                    Cache::new(Some(config_dir.clone()), None, None).expect("fail config path");
-                let account = SpotifyAccount::new(credentials, cache)
-                    .await
-                    .expect("Cache auth failed");
-                app_store.insert_account(username, account).await;
-            }
+    for entry in config_dir
+        .read_dir()
+        .expect("No config directory")
+        .flatten()
+    {
+        let config_dir = entry.path();
+        if let Some(credentials) = load_credentials(config_dir.clone()) {
+            let username = config_dir.file_name().unwrap().to_str().unwrap();
+            let cache = Cache::new(Some(config_dir.clone()), None, None).expect("fail config path");
+            let account = SpotifyAccount::new(credentials, cache)
+                .await
+                .expect("Cache auth failed");
+            app_store.insert_account(username, account).await;
         }
     }
 

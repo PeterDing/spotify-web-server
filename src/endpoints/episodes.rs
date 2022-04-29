@@ -103,7 +103,7 @@ pub async fn save_episodes(
     let account = app_store.authorize(username).await?;
 
     let mut ids = serde_json::map::Map::new();
-    ids.insert("ids".to_string(), query.ids.split(",").collect());
+    ids.insert("ids".to_string(), query.ids.split(',').collect());
 
     let result = account
         .client
@@ -124,7 +124,7 @@ pub async fn delete_episodes(
     let account = app_store.authorize(username).await?;
 
     let mut ids = serde_json::map::Map::new();
-    ids.insert("ids".to_string(), query.ids.split(",").collect());
+    ids.insert("ids".to_string(), query.ids.split(',').collect());
 
     let result = account
         .client
