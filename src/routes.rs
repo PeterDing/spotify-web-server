@@ -1,5 +1,5 @@
 use crate::endpoints::{
-    albums, artists, audios, episodes, health_check, login, search, shows, tracks,
+    albums, artists, audios, episodes, health_check, login, recommends, search, shows, tracks,
 };
 
 use actix_web::web;
@@ -66,4 +66,9 @@ pub fn route() -> actix_web::Scope {
         // Audios apis
         .route("/audio/{id}", web::get().to(audios::audio))
         .route("/audio-stream/{id}", web::get().to(audios::audio_stream))
+        // Recommendations
+        .route(
+            "recommendations",
+            web::get().to(recommends::recommendations),
+        )
 }

@@ -6,6 +6,7 @@ pub mod episodes;
 pub mod health_check;
 pub mod login;
 pub mod params;
+pub mod recommends;
 pub mod search;
 pub mod shows;
 pub mod tracks;
