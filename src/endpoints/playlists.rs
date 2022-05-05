@@ -6,33 +6,28 @@ use actix_web::{web, HttpResponse};
 
 use rspotify::{
     clients::{BaseClient, OAuthClient},
-    model::{
-        EpisodeId, Id, Page, PlayableId, PlaylistId, PlaylistItem, SimplifiedPlaylist, TrackId,
-        UserId,
-    },
+    model::{Id, Page, PlaylistId, PlaylistItem, SimplifiedPlaylist, UserId},
 };
 
 use crate::{
     account::SpotifyAccount,
     app_store::AppStore,
     endpoints::{
-        params::PageQueryData,
+        params::{
+            FeatureData, FieldsData, LimitOffsetData, PlaylistAddItemJsonData,
+            PlaylistAddItemQueryData, PlaylistDescData, PublicData,
+        },
         utils::{json_response, ok_response},
     },
     errors::ServerError,
     session::ServerSession,
 };
 
-#[derive(serde::Deserialize)]
-pub struct FieldsQueryData {
-    fields: Option<String>,
-}
-
 /// Path: GET `/playlists/{id}`
 /// Get a playlist owned by a Spotify user.
 pub async fn playlist(
     id: web::Path<String>,
-    fields_query: web::Query<FieldsQueryData>,
+    fields_query: web::Query<FieldsData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -47,20 +42,12 @@ pub async fn playlist(
     json_response(&result)
 }
 
-#[derive(serde::Deserialize)]
-pub struct PlaylistDescJsonData {
-    name: Option<String>,
-    public: Option<bool>,
-    collaborative: Option<bool>,
-    description: Option<String>,
-}
-
 /// Path: PUT `/playlists/{id}`
 /// Change a playlist's name and public/private state.
 /// (The user must, of course, own the playlist.)
 pub async fn change_playlist_detail(
     id: web::Path<String>,
-    json: web::Json<PlaylistDescJsonData>,
+    json: web::Json<PlaylistDescData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -87,8 +74,8 @@ pub async fn change_playlist_detail(
 /// Get full details of the items of a playlist owned by a Spotify user.
 pub async fn playlist_tracks(
     id: web::Path<String>,
-    query: web::Query<PageQueryData>,
-    fields_query: web::Query<FieldsQueryData>,
+    query: web::Query<LimitOffsetData>,
+    fields_query: web::Query<FieldsData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -141,60 +128,6 @@ async fn page_tracks(
     Ok(page)
 }
 
-#[derive(serde::Deserialize)]
-pub struct PlaylistAddItemQueryData {
-    uris: String,
-    position: Option<i32>,
-}
-
-impl PlaylistAddItemQueryData {
-    fn items(&self) -> Vec<Box<dyn PlayableId>> {
-        self.uris
-            .split(',')
-            .filter(|id_or_uri| {
-                id_or_uri.starts_with("spotify:track:") || id_or_uri.starts_with("spotify:episode:")
-            })
-            .map(|id_or_uri| {
-                if id_or_uri.starts_with("spotify:track:") {
-                    TrackId::from_id_or_uri(id_or_uri).map(|id| Box::new(id) as Box<dyn PlayableId>)
-                } else {
-                    EpisodeId::from_id_or_uri(id_or_uri)
-                        .map(|id| Box::new(id) as Box<dyn PlayableId>)
-                }
-            })
-            .filter(|id| id.is_ok())
-            .map(|id| id.unwrap())
-            .collect()
-    }
-}
-
-#[derive(serde::Deserialize)]
-pub struct PlaylistAddItemJsonData {
-    uris: Vec<String>,
-    position: Option<i32>,
-}
-
-impl PlaylistAddItemJsonData {
-    fn items(&self) -> Vec<Box<dyn PlayableId>> {
-        self.uris
-            .iter()
-            .filter(|id_or_uri| {
-                id_or_uri.starts_with("spotify:track:") || id_or_uri.starts_with("spotify:episode:")
-            })
-            .map(|id_or_uri| {
-                if id_or_uri.starts_with("spotify:track:") {
-                    TrackId::from_id_or_uri(id_or_uri).map(|id| Box::new(id) as Box<dyn PlayableId>)
-                } else {
-                    EpisodeId::from_id_or_uri(id_or_uri)
-                        .map(|id| Box::new(id) as Box<dyn PlayableId>)
-                }
-            })
-            .filter(|id| id.is_ok())
-            .map(|id| id.unwrap())
-            .collect()
-    }
-}
-
 /// Path: POST `/playlists/{id}/tracks`
 /// Add one or more items to a user's playlist.
 pub async fn playlist_add_items(
@@ -240,7 +173,7 @@ pub async fn playlist_add_items(
 /// Path: GET `/me/playlists`
 /// Get a list of (or all) playlists owned or followed by the current Spotify user.
 pub async fn current_user_playlists(
-    query: web::Query<PageQueryData>,
+    query: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -289,7 +222,7 @@ async fn page_current_user_playlists(
 /// Get a list of the playlists owned or followed by a Spotify user.
 pub async fn user_playlists(
     id: web::Path<String>,
-    query: web::Query<PageQueryData>,
+    query: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -339,11 +272,6 @@ async fn page_user_playlists(
     Ok(page)
 }
 
-#[derive(serde::Deserialize)]
-pub struct PublicJsonData {
-    public: bool,
-}
-
 /// Path: PUT `/playlists/{id}/followers`
 /// Add the current user as a follower of a playlist.
 pub async fn follow_playlist(
@@ -357,7 +285,7 @@ pub async fn follow_playlist(
 
     let playlist_id = PlaylistId::from_id(id.as_str())
         .map_err(|_| ServerError::ParamsError(format!("Invalid playlist id: {}", id.as_str())))?;
-    let public = if let Ok(p) = serde_json::from_slice::<PublicJsonData>(&body[..]) {
+    let public = if let Ok(p) = serde_json::from_slice::<PublicData>(&body[..]) {
         Some(p.public)
     } else {
         Some(true)
@@ -389,7 +317,7 @@ pub async fn unfollow_playlist(
 /// (The playlist will be empty until you add tracks.)
 pub async fn create_playlist(
     id: web::Path<String>,
-    json: web::Json<PlaylistDescJsonData>,
+    json: web::Json<PlaylistDescData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -421,19 +349,10 @@ pub async fn create_playlist(
     json_response(&result)
 }
 
-#[derive(serde::Deserialize)]
-pub struct FeatureQueryData {
-    locale: Option<String>,
-    country: Option<String>,
-    timestamp: Option<String>,
-    limit: Option<u32>,
-    offset: Option<u32>,
-}
-
 /// Path: GET `/browse/featured-playlists`
 /// Get a list of the playlists owned or followed by a Spotify user.
 pub async fn featured_playlists(
-    query: web::Query<FeatureQueryData>,
+    query: web::Query<FeatureData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -467,7 +386,7 @@ pub async fn featured_playlists(
 /// Get a list of Spotify playlists tagged with a particular category.
 pub async fn category_playlists(
     id: web::Path<String>,
-    query: web::Query<PageQueryData>,
+    query: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {

@@ -3,12 +3,12 @@ use actix_web::{http::header::ContentType, web, HttpResponse};
 use rspotify::clients::BaseClient;
 
 use crate::{
-    app_store::AppStore, endpoints::params::SearchQueryData, errors::ServerError,
+    app_store::AppStore, endpoints::params::SearchData, errors::ServerError,
     session::ServerSession,
 };
 
 pub async fn search(
-    query: web::Query<SearchQueryData>,
+    query: web::Query<SearchData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {

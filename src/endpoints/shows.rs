@@ -12,7 +12,7 @@ use crate::{
     app_store::AppStore,
     errors::ServerError,
     endpoints::{
-        params::{IdsQueryData, PageQueryData},
+        params::{IdsData, LimitOffsetData},
         utils::{json_response, ok_response},
     },
     session::ServerSession,
@@ -36,7 +36,7 @@ pub async fn show(
 
 /// Path: GET `/shows`
 pub async fn shows(
-    query: web::Query<IdsQueryData>,
+    query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -53,7 +53,7 @@ pub async fn shows(
 /// Path: GET `/shows/{id}/episodes`
 pub async fn show_episodes(
     id: web::Path<String>,
-    query: web::Query<PageQueryData>,
+    query: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -105,7 +105,7 @@ async fn page_episodes(
 
 /// Path: GET `/me/shows`
 pub async fn saved_shows(
-    query: web::Query<PageQueryData>,
+    query: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -147,7 +147,7 @@ async fn page_saved_shows(
 
 /// Path: PUT `/me/shows`
 pub async fn save_shows(
-    query: web::Query<IdsQueryData>,
+    query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -160,7 +160,7 @@ pub async fn save_shows(
 
 /// Path: DELETE `/me/shows`
 pub async fn delete_shows(
-    query: web::Query<IdsQueryData>,
+    query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {

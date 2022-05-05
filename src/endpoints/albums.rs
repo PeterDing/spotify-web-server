@@ -11,7 +11,7 @@ use crate::{
     account::SpotifyAccount,
     app_store::AppStore,
     endpoints::{
-        params::{IdsQueryData, PageQueryData},
+        params::{IdsData, LimitOffsetData},
         utils::{json_response, ok_response},
     },
     errors::ServerError,
@@ -36,7 +36,7 @@ pub async fn album(
 
 /// Path: GET `/albums`
 pub async fn albums(
-    query: web::Query<IdsQueryData>,
+    query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -50,7 +50,7 @@ pub async fn albums(
 /// Path: GET `/albums/{id}/tracks`
 pub async fn album_tracks(
     id: web::Path<String>,
-    query: web::Query<PageQueryData>,
+    query: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -102,7 +102,7 @@ async fn page_tracks(
 
 /// Path: GET `/me/albums`
 pub async fn saved_albums(
-    query: web::Query<PageQueryData>,
+    query: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -147,7 +147,7 @@ async fn page_saved_albums(
 
 /// Path: PUT `/me/albums`
 pub async fn save_albums(
-    query: web::Query<IdsQueryData>,
+    query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -163,7 +163,7 @@ pub async fn save_albums(
 
 /// Path: DELETE `/me/albums`
 pub async fn delete_albums(
-    query: web::Query<IdsQueryData>,
+    query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -179,7 +179,7 @@ pub async fn delete_albums(
 
 /// Path: GET `/browse/new-releases`
 pub async fn new_releases(
-    query: web::Query<PageQueryData>,
+    query: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {

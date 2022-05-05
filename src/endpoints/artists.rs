@@ -11,7 +11,7 @@ use crate::{
     account::SpotifyAccount,
     app_store::AppStore,
     endpoints::{
-        params::{IdsQueryData, PageQueryData},
+        params::{IdsData, LimitOffsetData},
         utils::json_response,
     },
     errors::ServerError,
@@ -36,7 +36,7 @@ pub async fn artist(
 
 /// Path: GET `/artists`
 pub async fn artists(
-    query: web::Query<IdsQueryData>,
+    query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -50,7 +50,7 @@ pub async fn artists(
 /// Path: GET `/artists/{id}/albums`
 pub async fn artist_albums(
     id: web::Path<String>,
-    query: web::Query<PageQueryData>,
+    query: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {

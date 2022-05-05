@@ -12,7 +12,7 @@ use crate::{
     account::SpotifyAccount,
     app_store::AppStore,
     endpoints::{
-        params::{IdsQueryData, PageQueryData},
+        params::{IdsData, LimitOffsetData},
         utils::json_response,
     },
     errors::ServerError,
@@ -37,7 +37,7 @@ pub async fn episode(
 
 /// Path: GET `/episodes`
 pub async fn episodes(
-    query: web::Query<IdsQueryData>,
+    query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -53,7 +53,7 @@ pub async fn episodes(
 
 /// Path: GET `/me/episodes`
 pub async fn saved_episodes(
-    query: web::Query<PageQueryData>,
+    query: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -95,7 +95,7 @@ async fn page_saved_episodes(
 
 /// Path: PUT `/me/episodes`
 pub async fn save_episodes(
-    query: web::Query<IdsQueryData>,
+    query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -116,7 +116,7 @@ pub async fn save_episodes(
 
 /// Path: DELETE `/me/episodes`
 pub async fn delete_episodes(
-    query: web::Query<IdsQueryData>,
+    query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {

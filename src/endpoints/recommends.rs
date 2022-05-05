@@ -7,14 +7,14 @@ use rspotify::{
 
 use crate::{
     app_store::AppStore,
-    endpoints::{params::RecommendationsQueryData, utils::json_response},
+    endpoints::{params::RecommendationsData, utils::json_response},
     errors::ServerError,
     session::ServerSession,
 };
 
 /// Path: GET `/recommendations`
 pub async fn recommendations(
-    query: web::Query<RecommendationsQueryData>,
+    query: web::Query<RecommendationsData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {

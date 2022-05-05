@@ -10,13 +10,13 @@ use crate::{
         SpotifyAccount, UserName,
     },
     app_store::AppStore,
-    endpoints::params::{LoginFormData, UserNameQueryData},
+    endpoints::params::{LoginData, UserNameData},
     errors::ServerError,
     session::ServerSession,
 };
 
 pub async fn login(
-    form: web::Form<LoginFormData>,
+    form: web::Form<LoginData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -44,7 +44,7 @@ pub async fn login(
 }
 
 pub async fn miracle(
-    query: web::Query<UserNameQueryData>,
+    query: web::Query<UserNameData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {

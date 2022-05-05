@@ -1,7 +1,10 @@
-use rspotify::model::{Id, IncludeExternal, Market, RecommendationsAttribute, SearchType};
+use rspotify::model::{
+    EpisodeId, Id, IncludeExternal, Market, PlayableId, RecommendationsAttribute, SearchType,
+    TrackId,
+};
 
 #[derive(serde::Deserialize)]
-pub struct LoginFormData {
+pub struct LoginData {
     pub username: String,
     pub password: String,
     // 1: using cache
@@ -10,12 +13,12 @@ pub struct LoginFormData {
 }
 
 #[derive(serde::Deserialize)]
-pub struct UserNameQueryData {
+pub struct UserNameData {
     pub username: Option<String>,
 }
 
 #[derive(serde::Deserialize)]
-pub struct SearchQueryData {
+pub struct SearchData {
     pub q: String,
     #[serde(alias = "type")]
     pub type_: SearchType,
@@ -35,11 +38,11 @@ pub fn into_ids<T: Id>(s: &str) -> Vec<T> {
 
 /// Ids Query Data
 #[derive(serde::Deserialize)]
-pub struct IdsQueryData {
+pub struct IdsData {
     pub ids: String,
 }
 
-impl IdsQueryData {
+impl IdsData {
     pub fn ids<T: Id>(&self) -> Vec<T> {
         into_ids(&self.ids)
     }
@@ -47,14 +50,14 @@ impl IdsQueryData {
 
 /// Page Query Data
 #[derive(serde::Deserialize)]
-pub struct PageQueryData {
+pub struct LimitOffsetData {
     pub limit: Option<u32>,
     pub offset: Option<u32>,
 }
 
 /// Recommendations Query Data
 #[derive(serde::Deserialize)]
-pub struct RecommendationsQueryData {
+pub struct RecommendationsData {
     seed_artists: Option<String>,
     seed_genres: Option<String>,
     seed_tracks: Option<String>,
@@ -104,7 +107,7 @@ pub struct RecommendationsQueryData {
     target_valence: Option<f32>,
 }
 
-impl RecommendationsQueryData {
+impl RecommendationsData {
     pub fn seed_artists<T: Id>(&self) -> Option<Vec<T>> {
         self.seed_artists.as_ref().map(|sa| into_ids(sa))
     }
@@ -251,5 +254,86 @@ impl RecommendationsQueryData {
         }
 
         attributes
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct FieldsData {
+    pub fields: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct PlaylistDescData {
+    pub name: Option<String>,
+    pub public: Option<bool>,
+    pub collaborative: Option<bool>,
+    pub description: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct PublicData {
+    pub public: bool,
+}
+
+#[derive(serde::Deserialize)]
+pub struct FeatureData {
+    pub locale: Option<String>,
+    pub country: Option<String>,
+    pub timestamp: Option<String>,
+    pub limit: Option<u32>,
+    pub offset: Option<u32>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct PlaylistAddItemQueryData {
+    pub uris: String,
+    pub position: Option<i32>,
+}
+
+impl PlaylistAddItemQueryData {
+    pub fn items(&self) -> Vec<Box<dyn PlayableId>> {
+        self.uris
+            .split(',')
+            .filter(|id_or_uri| {
+                id_or_uri.starts_with("spotify:track:") || id_or_uri.starts_with("spotify:episode:")
+            })
+            .map(|id_or_uri| {
+                if id_or_uri.starts_with("spotify:track:") {
+                    TrackId::from_id_or_uri(id_or_uri).map(|id| Box::new(id) as Box<dyn PlayableId>)
+                } else {
+                    EpisodeId::from_id_or_uri(id_or_uri)
+                        .map(|id| Box::new(id) as Box<dyn PlayableId>)
+                }
+            })
+            .filter(|id| id.is_ok())
+            .map(|id| id.unwrap())
+            .collect()
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct PlaylistAddItemJsonData {
+    pub uris: Vec<String>,
+    pub position: Option<i32>,
+}
+
+impl PlaylistAddItemJsonData {
+    pub fn items(&self) -> Vec<Box<dyn PlayableId>> {
+        self.uris
+            .iter()
+            .filter(|id_or_uri| {
+                id_or_uri.starts_with("spotify:track:") || id_or_uri.starts_with("spotify:episode:")
+            })
+            .map(|id_or_uri| {
+                if id_or_uri.starts_with("spotify:track:") {
+                    TrackId::from_id_or_uri(id_or_uri).map(|id| Box::new(id) as Box<dyn PlayableId>)
+                } else {
+                    EpisodeId::from_id_or_uri(id_or_uri)
+                        .map(|id| Box::new(id) as Box<dyn PlayableId>)
+                }
+            })
+            .filter(|id| id.is_ok())
+            .map(|id| id.unwrap())
+            .collect()
     }
 }

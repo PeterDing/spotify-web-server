@@ -11,7 +11,7 @@ use crate::{
     account::SpotifyAccount,
     app_store::AppStore,
     endpoints::{
-        params::{IdsQueryData, PageQueryData},
+        params::{IdsData, LimitOffsetData},
         utils::{json_response, ok_response},
     },
     errors::ServerError,
@@ -36,7 +36,7 @@ pub async fn track(
 
 /// Path: GET `/tracks`
 pub async fn tracks(
-    query: web::Query<IdsQueryData>,
+    query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -49,7 +49,7 @@ pub async fn tracks(
 
 /// Path: GET `/me/tracks`
 pub async fn saved_tracks(
-    query: web::Query<PageQueryData>,
+    query: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -94,7 +94,7 @@ async fn page_saved_tracks(
 
 /// Path: PUT `/me/tracks`
 pub async fn save_tracks(
-    query: web::Query<IdsQueryData>,
+    query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -110,7 +110,7 @@ pub async fn save_tracks(
 
 /// Path: DELETE `/me/tracks`
 pub async fn delete_tracks(
-    query: web::Query<IdsQueryData>,
+    query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
@@ -142,7 +142,7 @@ pub async fn track_features(
 
 /// Path: GET `/audio-features`
 pub async fn tracks_features(
-    query: web::Query<IdsQueryData>,
+    query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
