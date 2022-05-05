@@ -1,5 +1,6 @@
 use crate::endpoints::{
-    albums, artists, audios, episodes, health_check, login, recommends, search, shows, tracks,
+    albums, artists, audios, episodes, health_check, login, playlists, recommends, search, shows,
+    tracks,
 };
 
 use actix_web::web;
@@ -70,5 +71,46 @@ pub fn route() -> actix_web::Scope {
         .route(
             "recommendations",
             web::get().to(recommends::recommendations),
+        )
+        .route("/playlists/{id}", web::get().to(playlists::playlist))
+        .route(
+            "/playlists/{id}",
+            web::put().to(playlists::change_playlist_detail),
+        )
+        .route(
+            "/playlists/{id}/tracks",
+            web::get().to(playlists::playlist_tracks),
+        )
+        .route(
+            "/playlists/{id}/tracks",
+            web::post().to(playlists::playlist_add_items),
+        )
+        .route(
+            "/me/playlists",
+            web::get().to(playlists::current_user_playlists),
+        )
+        .route(
+            "/users/{id}/playlists",
+            web::get().to(playlists::user_playlists),
+        )
+        .route(
+            "/playlists/{id}/followers",
+            web::put().to(playlists::follow_playlist),
+        )
+        .route(
+            "/playlists/{id}/followers",
+            web::delete().to(playlists::unfollow_playlist),
+        )
+        .route(
+            "/users/{id}/playlists",
+            web::post().to(playlists::create_playlist),
+        )
+        .route(
+            "/browse/featured-playlists",
+            web::get().to(playlists::featured_playlists),
+        )
+        .route(
+            "/browse/categories/{id}/playlists",
+            web::get().to(playlists::category_playlists),
         )
 }
