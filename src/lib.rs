@@ -1,5 +1,3 @@
-#![feature(box_into_inner)]
-
 pub mod account;
 pub mod app_store;
 pub mod endpoints;
