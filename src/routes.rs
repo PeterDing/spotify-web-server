@@ -1,5 +1,5 @@
 use crate::endpoints::{
-    albums, artists, audios, categories, episodes, genres, health_check, login, playlists,
+    albums, artists, audios, categories, episodes, genres, health_check, login, markets, playlists,
     recommends, search, shows, tracks,
 };
 
@@ -72,6 +72,7 @@ pub fn route() -> actix_web::Scope {
             "recommendations",
             web::get().to(recommends::recommendations),
         )
+        // Playlists
         .route("/playlists/{id}", web::get().to(playlists::playlist))
         .route(
             "/playlists/{id}",
@@ -109,13 +110,17 @@ pub fn route() -> actix_web::Scope {
             "/browse/featured-playlists",
             web::get().to(playlists::featured_playlists),
         )
+        // Categories
         .route(
             "/browse/categories/{id}/playlists",
             web::get().to(playlists::category_playlists),
         )
         .route("/browse/categories", web::get().to(categories::categories))
+        // Genres
         .route(
             "/recommendations/available-genre-seeds",
             web::get().to(genres::genres),
         )
+        // Markets
+        .route("/markets", web::get().to(markets::markets))
 }

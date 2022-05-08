@@ -7,6 +7,7 @@ pub mod episodes;
 pub mod genres;
 pub mod health_check;
 pub mod login;
+pub mod markets;
 pub mod params;
 pub mod playlists;
 pub mod recommends;
