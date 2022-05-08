@@ -2,6 +2,7 @@ pub mod albums;
 pub mod artists;
 pub mod audios;
 pub mod auth;
+pub mod categories;
 pub mod episodes;
 pub mod health_check;
 pub mod login;

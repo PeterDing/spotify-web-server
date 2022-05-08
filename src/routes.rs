@@ -1,6 +1,6 @@
 use crate::endpoints::{
-    albums, artists, audios, episodes, health_check, login, playlists, recommends, search, shows,
-    tracks,
+    albums, artists, audios, categories, episodes, health_check, login, playlists, recommends,
+    search, shows, tracks,
 };
 
 use actix_web::web;
@@ -113,4 +113,5 @@ pub fn route() -> actix_web::Scope {
             "/browse/categories/{id}/playlists",
             web::get().to(playlists::category_playlists),
         )
+        .route("/browse/categories", web::get().to(categories::categories))
 }
