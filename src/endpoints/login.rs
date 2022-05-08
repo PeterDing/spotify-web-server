@@ -40,6 +40,7 @@ pub async fn login(
         .insert_account(form.username.clone(), account)
         .await;
     session.insert_username(&form.username)?;
+
     Ok(HttpResponse::Ok().finish())
 }
 

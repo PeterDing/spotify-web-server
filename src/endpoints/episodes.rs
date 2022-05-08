@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use actix_web::{http::header::ContentType, web, HttpResponse};
+use actix_web::{web, HttpResponse};
 
 use rspotify::{
     clients::BaseClient,
@@ -66,9 +66,7 @@ pub async fn saved_episodes(
     }
 
     let page = page_saved_episodes(&account, None, limit, query.offset).await?;
-    Ok(HttpResponse::Ok()
-        .content_type(ContentType::json())
-        .body(page))
+    json_response(&page)
 }
 
 /// Current user saved episodes by page
@@ -109,9 +107,8 @@ pub async fn save_episodes(
         .client
         .endpoint_put("me/episodes", &serde_json::Value::from(ids))
         .await?;
-    Ok(HttpResponse::Ok()
-        .content_type(ContentType::json())
-        .body(result))
+
+    json_response(&result)
 }
 
 /// Path: DELETE `/me/episodes`
@@ -130,7 +127,6 @@ pub async fn delete_episodes(
         .client
         .endpoint_delete("me/episodes", &serde_json::Value::from(ids))
         .await?;
-    Ok(HttpResponse::Ok()
-        .content_type(ContentType::json())
-        .body(result))
+
+    json_response(&result)
 }

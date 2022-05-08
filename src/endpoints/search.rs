@@ -1,14 +1,20 @@
-use actix_web::{http::header::ContentType, web, HttpResponse};
+use actix_web::{web, HttpResponse};
 
 use rspotify::clients::BaseClient;
 
 use crate::{
     app_store::AppStore,
-    endpoints::params::{LimitOffsetData, SearchData},
+    endpoints::{
+        params::{LimitOffsetData, SearchData},
+        utils::json_response,
+    },
     errors::ServerError,
     session::ServerSession,
 };
 
+/// Path: GET `/search`
+/// Get Spotify catalog information about albums, artists, playlists,
+/// tracks, shows or episodes that match a keyword string.
 pub async fn search(
     query: web::Query<SearchData>,
     limit_offset: web::Query<LimitOffsetData>,
@@ -30,7 +36,5 @@ pub async fn search(
         )
         .await?;
 
-    Ok(HttpResponse::Ok()
-        .content_type(ContentType::json())
-        .body(serde_json::to_string(&result)?))
+    json_response(result)
 }
