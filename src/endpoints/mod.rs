@@ -4,6 +4,7 @@ pub mod audios;
 pub mod auth;
 pub mod categories;
 pub mod episodes;
+pub mod genres;
 pub mod health_check;
 pub mod login;
 pub mod params;
