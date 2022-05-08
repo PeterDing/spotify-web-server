@@ -24,8 +24,6 @@ pub struct SearchData {
     pub type_: SearchType,
     pub market: Option<Market>,
     pub include_external: Option<IncludeExternal>,
-    pub limit: Option<u32>,
-    pub offset: Option<u32>,
 }
 
 pub fn into_ids<T: Id>(s: &str) -> Vec<T> {
@@ -276,12 +274,14 @@ pub struct PublicData {
 }
 
 #[derive(serde::Deserialize)]
-pub struct FeatureData {
+pub struct CountryLocateData {
     pub locale: Option<String>,
     pub country: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct TimestampData {
     pub timestamp: Option<String>,
-    pub limit: Option<u32>,
-    pub offset: Option<u32>,
 }
 
 #[derive(serde::Deserialize)]

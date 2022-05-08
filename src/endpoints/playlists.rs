@@ -14,8 +14,8 @@ use crate::{
     app_store::AppStore,
     endpoints::{
         params::{
-            FeatureData, FieldsData, LimitOffsetData, PlaylistAddItemJsonData,
-            PlaylistAddItemQueryData, PlaylistDescData, PublicData,
+            CountryLocateData, FieldsData, LimitOffsetData, PlaylistAddItemJsonData,
+            PlaylistAddItemQueryData, PlaylistDescData, PublicData, TimestampData,
         },
         utils::{json_response, ok_response},
     },
@@ -352,14 +352,16 @@ pub async fn create_playlist(
 /// Path: GET `/browse/featured-playlists`
 /// Get a list of the playlists owned or followed by a Spotify user.
 pub async fn featured_playlists(
-    query: web::Query<FeatureData>,
+    country_locate: web::Query<CountryLocateData>,
+    timestamp: web::Query<TimestampData>,
+    limit_offset: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
-    let timestamp = if let Some(ts) = &query.timestamp {
+    let timestamp = if let Some(ts) = &timestamp.timestamp {
         if let Ok(ts) = Utc.datetime_from_str(ts, "%Y-%m-%dT%H:%M:%S") {
             Some(ts)
         } else {
@@ -372,11 +374,11 @@ pub async fn featured_playlists(
     let result = account
         .client
         .featured_playlists(
-            query.locale.as_deref(),
+            country_locate.locale.as_deref(),
             None,
             timestamp.as_ref(),
-            query.limit,
-            query.offset,
+            limit_offset.limit,
+            limit_offset.offset,
         )
         .await?;
     json_response(&result)
