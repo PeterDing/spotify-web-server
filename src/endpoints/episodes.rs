@@ -20,6 +20,7 @@ use crate::{
 };
 
 /// Path: GET `/episodes/{id}`
+#[tracing::instrument(skip(app_store, session))]
 pub async fn episode(
     id: web::Path<String>,
     app_store: web::Data<AppStore>,
@@ -36,6 +37,7 @@ pub async fn episode(
 }
 
 /// Path: GET `/episodes`
+#[tracing::instrument(skip(app_store, session))]
 pub async fn episodes(
     query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
@@ -52,6 +54,7 @@ pub async fn episodes(
 }
 
 /// Path: GET `/me/episodes`
+#[tracing::instrument(skip(app_store, session))]
 pub async fn saved_episodes(
     query: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
@@ -92,6 +95,7 @@ async fn page_saved_episodes(
 }
 
 /// Path: PUT `/me/episodes`
+#[tracing::instrument(skip(app_store, session))]
 pub async fn save_episodes(
     query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
@@ -112,6 +116,7 @@ pub async fn save_episodes(
 }
 
 /// Path: DELETE `/me/episodes`
+#[tracing::instrument(skip(app_store, session))]
 pub async fn delete_episodes(
     query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,

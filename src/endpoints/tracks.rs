@@ -19,6 +19,8 @@ use crate::{
 };
 
 /// Path: GET `/tracks/{id}`
+/// Get Spotify catalog information for a single track identified by its unique Spotify ID.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn track(
     id: web::Path<String>,
     app_store: web::Data<AppStore>,
@@ -35,6 +37,8 @@ pub async fn track(
 }
 
 /// Path: GET `/tracks`
+/// Get Spotify catalog information for multiple tracks based on their Spotify IDs.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn tracks(
     query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
@@ -48,6 +52,8 @@ pub async fn tracks(
 }
 
 /// Path: GET `/me/tracks`
+/// Get a list of the songs saved in the current Spotify user's 'Your Music' library.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn saved_tracks(
     query: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
@@ -93,6 +99,8 @@ async fn page_saved_tracks(
 }
 
 /// Path: PUT `/me/tracks`
+/// Save one or more tracks to the current user's 'Your Music' library.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn save_tracks(
     query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
@@ -109,6 +117,8 @@ pub async fn save_tracks(
 }
 
 /// Path: DELETE `/me/tracks`
+/// Remove one or more tracks from the current user's 'Your Music' library.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn delete_tracks(
     query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
@@ -125,6 +135,8 @@ pub async fn delete_tracks(
 }
 
 /// Path: GET `/audio-features/{id}`
+/// Get audio feature information for a single track identified by its unique Spotify ID.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn track_features(
     id: web::Path<String>,
     app_store: web::Data<AppStore>,
@@ -141,6 +153,8 @@ pub async fn track_features(
 }
 
 /// Path: GET `/audio-features`
+/// Get audio features for multiple tracks based on their Spotify IDs.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn tracks_features(
     query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
@@ -154,6 +168,10 @@ pub async fn tracks_features(
 }
 
 /// Path: GET `/audio-analysis/{id}`
+/// Get a low-level audio analysis for a track in the Spotify catalog.
+/// The audio analysis describes the track’s structure and musical
+/// content, including rhythm, pitch, and timbre.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn track_analysis(
     id: web::Path<String>,
     app_store: web::Data<AppStore>,

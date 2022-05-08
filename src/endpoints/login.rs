@@ -15,6 +15,7 @@ use crate::{
     session::ServerSession,
 };
 
+#[tracing::instrument(skip(app_store, session))]
 pub async fn login(
     form: web::Form<LoginData>,
     app_store: web::Data<AppStore>,
@@ -44,6 +45,7 @@ pub async fn login(
     Ok(HttpResponse::Ok().finish())
 }
 
+#[tracing::instrument(skip(app_store, session))]
 pub async fn miracle(
     query: web::Query<UserNameData>,
     app_store: web::Data<AppStore>,

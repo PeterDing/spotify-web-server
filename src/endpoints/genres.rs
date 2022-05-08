@@ -9,6 +9,7 @@ use crate::{
 
 /// Path: GET `/recommendations/available-genre-seeds`
 /// Retrieve a list of available genres seed parameter values for recommendations.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn genres(
     app_store: web::Data<AppStore>,
     session: ServerSession,

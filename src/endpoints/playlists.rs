@@ -25,6 +25,7 @@ use crate::{
 
 /// Path: GET `/playlists/{id}`
 /// Get a playlist owned by a Spotify user.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn playlist(
     id: web::Path<String>,
     fields_query: web::Query<FieldsData>,
@@ -45,6 +46,7 @@ pub async fn playlist(
 /// Path: PUT `/playlists/{id}`
 /// Change a playlist's name and public/private state.
 /// (The user must, of course, own the playlist.)
+#[tracing::instrument(skip(app_store, session))]
 pub async fn change_playlist_detail(
     id: web::Path<String>,
     json: web::Json<PlaylistDescData>,
@@ -72,6 +74,7 @@ pub async fn change_playlist_detail(
 
 /// Path: GET `/playlists/{id}/tracks`
 /// Get full details of the items of a playlist owned by a Spotify user.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn playlist_tracks(
     id: web::Path<String>,
     query: web::Query<LimitOffsetData>,
@@ -130,6 +133,7 @@ async fn page_tracks(
 
 /// Path: POST `/playlists/{id}/tracks`
 /// Add one or more items to a user's playlist.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn playlist_add_items(
     id: web::Path<String>,
     query: web::Query<PlaylistAddItemQueryData>,
@@ -172,6 +176,7 @@ pub async fn playlist_add_items(
 
 /// Path: GET `/me/playlists`
 /// Get a list of (or all) playlists owned or followed by the current Spotify user.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn current_user_playlists(
     query: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
@@ -220,6 +225,7 @@ async fn page_current_user_playlists(
 
 /// Path: GET `/users/{id}/playlists`
 /// Get a list of the playlists owned or followed by a Spotify user.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn user_playlists(
     id: web::Path<String>,
     query: web::Query<LimitOffsetData>,
@@ -274,6 +280,7 @@ async fn page_user_playlists(
 
 /// Path: PUT `/playlists/{id}/followers`
 /// Add the current user as a follower of a playlist.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn follow_playlist(
     id: web::Path<String>,
     body: web::Bytes,
@@ -297,6 +304,7 @@ pub async fn follow_playlist(
 
 /// Path: DELETE `/playlists/{id}/followers`
 /// Remove the current user as a follower of a playlist.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn unfollow_playlist(
     id: web::Path<String>,
     app_store: web::Data<AppStore>,
@@ -315,6 +323,7 @@ pub async fn unfollow_playlist(
 /// Path: POST `/users/{id}/playlists`
 /// Create a playlist for a Spotify user.
 /// (The playlist will be empty until you add tracks.)
+#[tracing::instrument(skip(app_store, session))]
 pub async fn create_playlist(
     id: web::Path<String>,
     json: web::Json<PlaylistDescData>,
@@ -351,6 +360,7 @@ pub async fn create_playlist(
 
 /// Path: GET `/browse/featured-playlists`
 /// Get a list of the playlists owned or followed by a Spotify user.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn featured_playlists(
     country_locate: web::Query<CountryLocateData>,
     timestamp: web::Query<TimestampData>,
@@ -386,6 +396,7 @@ pub async fn featured_playlists(
 
 /// Path: GET `/browse/categories/{id}/playlists`
 /// Get a list of Spotify playlists tagged with a particular category.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn category_playlists(
     id: web::Path<String>,
     query: web::Query<LimitOffsetData>,

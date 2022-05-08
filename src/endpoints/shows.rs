@@ -10,15 +10,16 @@ use rspotify::{
 use crate::{
     account::SpotifyAccount,
     app_store::AppStore,
-    errors::ServerError,
     endpoints::{
         params::{IdsData, LimitOffsetData},
         utils::{json_response, ok_response},
     },
+    errors::ServerError,
     session::ServerSession,
 };
 
 /// Path: GET `/shows/{id}`
+#[tracing::instrument(skip(app_store, session))]
 pub async fn show(
     id: web::Path<String>,
     app_store: web::Data<AppStore>,
@@ -35,6 +36,7 @@ pub async fn show(
 }
 
 /// Path: GET `/shows`
+#[tracing::instrument(skip(app_store, session))]
 pub async fn shows(
     query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
@@ -51,6 +53,7 @@ pub async fn shows(
 }
 
 /// Path: GET `/shows/{id}/episodes`
+#[tracing::instrument(skip(app_store, session))]
 pub async fn show_episodes(
     id: web::Path<String>,
     query: web::Query<LimitOffsetData>,
@@ -104,6 +107,7 @@ async fn page_episodes(
 }
 
 /// Path: GET `/me/shows`
+#[tracing::instrument(skip(app_store, session))]
 pub async fn saved_shows(
     query: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
@@ -146,6 +150,7 @@ async fn page_saved_shows(
 }
 
 /// Path: PUT `/me/shows`
+#[tracing::instrument(skip(app_store, session))]
 pub async fn save_shows(
     query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
@@ -159,6 +164,7 @@ pub async fn save_shows(
 }
 
 /// Path: DELETE `/me/shows`
+#[tracing::instrument(skip(app_store, session))]
 pub async fn delete_shows(
     query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,

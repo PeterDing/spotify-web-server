@@ -13,6 +13,7 @@ use crate::{app_store::AppStore, errors::ServerError, session::ServerSession};
 use super::utils::ok_with_body_response;
 
 /// Path: GET `/audio/{id}`
+#[tracing::instrument(skip(app_store, session))]
 pub async fn audio(
     id: web::Path<String>,
     app_store: web::Data<AppStore>,
@@ -30,6 +31,7 @@ pub async fn audio(
 }
 
 /// Path: GET `/audio-stream/{id}`
+#[tracing::instrument(skip(app_store, session))]
 pub async fn audio_stream(
     id: web::Path<String>,
     app_store: web::Data<AppStore>,
@@ -42,8 +44,6 @@ pub async fn audio_stream(
         .map_err(|_| ServerError::ParamsError(format!("Track id {} is invalid", id.as_str())))?;
 
     let audio_item = AudioItem::get_audio_item(&account.session, spotify_id).await?;
-
-    println!("Hello, world! {:?}", audio_item);
 
     // let file_id = audio_item.files.get(&FileFormat::OGG_VORBIS_96).unwrap();
     let file_id = audio_item.files.get(&FileFormat::OGG_VORBIS_320).unwrap();

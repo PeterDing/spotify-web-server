@@ -19,6 +19,8 @@ use crate::{
 };
 
 /// Path: GET `/artists/{id}`
+/// Get Spotify catalog information for a single artist identified by their unique Spotify ID.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn artist(
     id: web::Path<String>,
     app_store: web::Data<AppStore>,
@@ -35,6 +37,8 @@ pub async fn artist(
 }
 
 /// Path: GET `/artists`
+/// Get Spotify catalog information for several artists based on their Spotify IDs.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn artists(
     query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
@@ -48,6 +52,8 @@ pub async fn artists(
 }
 
 /// Path: GET `/artists/{id}/albums`
+/// Get Spotify catalog information about an artist's albums.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn artist_albums(
     id: web::Path<String>,
     query: web::Query<LimitOffsetData>,
@@ -101,6 +107,8 @@ async fn page_albums(
 }
 
 /// Path: GET `/artists/{id}/top-tracks`
+/// Get Spotify catalog information about an artist's top tracks by country.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn artist_top_tracks(
     id: web::Path<String>,
     app_store: web::Data<AppStore>,
@@ -119,6 +127,9 @@ pub async fn artist_top_tracks(
 }
 
 /// Path: GET `/artists/{id}/related-artists`
+/// Get Spotify catalog information about artists similar to a given artist.
+/// Similarity is based on analysis of the Spotify community's listening history.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn artist_related_artists(
     id: web::Path<String>,
     app_store: web::Data<AppStore>,

@@ -9,6 +9,7 @@ use crate::{
 
 /// Path: GET `/markets`
 /// Get the list of markets where Spotify is available.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn markets(
     app_store: web::Data<AppStore>,
     session: ServerSession,

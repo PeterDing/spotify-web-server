@@ -13,6 +13,7 @@ use crate::{
 };
 
 /// Path: GET `/recommendations`
+#[tracing::instrument(skip(app_store, session))]
 pub async fn recommendations(
     query: web::Query<RecommendationsData>,
     app_store: web::Data<AppStore>,

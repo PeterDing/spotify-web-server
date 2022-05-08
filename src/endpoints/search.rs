@@ -15,6 +15,7 @@ use crate::{
 /// Path: GET `/search`
 /// Get Spotify catalog information about albums, artists, playlists,
 /// tracks, shows or episodes that match a keyword string.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn search(
     query: web::Query<SearchData>,
     limit_offset: web::Query<LimitOffsetData>,

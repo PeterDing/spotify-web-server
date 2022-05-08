@@ -21,6 +21,7 @@ use crate::{
 /// Path: GET `/browse/categories`
 /// Get a list of categories used to tag items in Spotify
 /// (on, for example, the Spotify player’s “Browse” tab).
+#[tracing::instrument(skip(app_store, session))]
 pub async fn categories(
     country_locate: web::Query<CountryLocateData>,
     limit_offset: web::Query<LimitOffsetData>,

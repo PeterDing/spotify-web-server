@@ -16,7 +16,7 @@ use crate::errors::ServerError;
 
 pub mod utils;
 
-const CLIENT_ID: &str = "d420a117a32841c2b3474932e49fb54b";
+const CLIENT_ID: &str = "06e33fd028714708827e268040efb778";
 const SCOPE: &str = "user-read-private,playlist-read-private,playlist-read-collaborative,playlist-modify-public,playlist-modify-private,user-follow-modify,user-follow-read,user-library-read,user-library-modify,user-top-read,user-read-recently-played";
 
 struct Expiration {

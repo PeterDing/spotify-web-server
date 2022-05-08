@@ -3,7 +3,7 @@ use rspotify::model::{
     TrackId,
 };
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct LoginData {
     pub username: String,
     pub password: String,
@@ -12,12 +12,12 @@ pub struct LoginData {
     pub cache: Option<u8>,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct UserNameData {
     pub username: Option<String>,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct SearchData {
     pub q: String,
     #[serde(alias = "type")]
@@ -35,7 +35,7 @@ pub fn into_ids<T: Id>(s: &str) -> Vec<T> {
 }
 
 /// Ids Query Data
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct IdsData {
     pub ids: String,
 }
@@ -47,14 +47,14 @@ impl IdsData {
 }
 
 /// Page Query Data
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct LimitOffsetData {
     pub limit: Option<u32>,
     pub offset: Option<u32>,
 }
 
 /// Recommendations Query Data
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct RecommendationsData {
     seed_artists: Option<String>,
     seed_genres: Option<String>,
@@ -255,12 +255,12 @@ impl RecommendationsData {
     }
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct FieldsData {
     pub fields: Option<String>,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct PlaylistDescData {
     pub name: Option<String>,
     pub public: Option<bool>,
@@ -268,23 +268,23 @@ pub struct PlaylistDescData {
     pub description: Option<String>,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct PublicData {
     pub public: bool,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct CountryLocateData {
     pub locale: Option<String>,
     pub country: Option<String>,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct TimestampData {
     pub timestamp: Option<String>,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct PlaylistAddItemQueryData {
     pub uris: String,
     pub position: Option<i32>,
@@ -311,7 +311,7 @@ impl PlaylistAddItemQueryData {
     }
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct PlaylistAddItemJsonData {
     pub uris: Vec<String>,
     pub position: Option<i32>,

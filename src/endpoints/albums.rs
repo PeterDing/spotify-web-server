@@ -20,6 +20,7 @@ use crate::{
 
 /// Path: GET `/albums/{id}`
 /// Get Spotify catalog information for a single album.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn album(
     id: web::Path<String>,
     app_store: web::Data<AppStore>,
@@ -37,6 +38,7 @@ pub async fn album(
 
 /// Path: GET `/albums`
 /// Get Spotify catalog information for multiple albums identified by their Spotify IDs.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn albums(
     query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
@@ -52,6 +54,7 @@ pub async fn albums(
 /// Path: GET `/albums/{id}/tracks`
 /// Get Spotify catalog information about an album’s tracks.
 /// Optional parameters can be used to limit the number of tracks returned.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn album_tracks(
     id: web::Path<String>,
     query: web::Query<LimitOffsetData>,
@@ -106,6 +109,7 @@ async fn page_tracks(
 
 /// Path: GET `/me/albums`
 /// Get a list of the albums saved in the current Spotify user's 'Your Music' library.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn saved_albums(
     query: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
@@ -152,6 +156,7 @@ async fn page_saved_albums(
 
 /// Path: PUT `/me/albums`
 /// Save one or more albums to the current user's 'Your Music' library.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn save_albums(
     query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
@@ -169,6 +174,7 @@ pub async fn save_albums(
 
 /// Path: DELETE `/me/albums`
 /// Remove one or more albums from the current user's 'Your Music' library.
+#[tracing::instrument(skip(app_store, session))]
 pub async fn delete_albums(
     query: web::Query<IdsData>,
     app_store: web::Data<AppStore>,
@@ -187,6 +193,7 @@ pub async fn delete_albums(
 /// Path: GET `/browse/new-releases`
 /// Get a list of new album releases featured in Spotify
 /// (shown, for example, on a Spotify player’s “Browse” tab).
+#[tracing::instrument(skip(app_store, session))]
 pub async fn new_releases(
     query: web::Query<LimitOffsetData>,
     app_store: web::Data<AppStore>,
