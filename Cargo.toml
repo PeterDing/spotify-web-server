@@ -25,13 +25,19 @@ actix-session = { version = "0.6", features = ["cookie-session"] }
 librespot = { version = "0.3", default-features = false }
 rspotify = "0.11"
 
+rand = "0.8"
 chrono = "0.4"
 serde = "1"
 serde_json = "1"
 thiserror = "1"
 anyhow = "1"
+percent-encoding = "2"
 url = "2"
 toml = "0.5"
+
+# Crypto
+aes = "0.8"
+cbc = { version = "0.1", features = ["alloc", "block-padding"] }
 
 # Tracing
 tracing = "0.1"
