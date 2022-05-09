@@ -12,7 +12,7 @@ use rspotify::AuthCodeSpotify;
 use chrono::{DateTime, Utc};
 use tokio::sync::RwLock;
 
-use crate::errors::ServerError;
+use crate::{common::crypto, errors::ServerError};
 
 pub mod utils;
 
@@ -45,6 +45,8 @@ pub struct SpotifyAccount {
     pub session: Session,
     pub client: AuthCodeSpotify,
     expiration: RwLock<Expiration>,
+    // Secret key
+    secret: [u8; 16],
 }
 
 impl SpotifyAccount {
@@ -52,11 +54,13 @@ impl SpotifyAccount {
         let config = SessionConfig::default();
         let session = Session::connect(config, credentials.clone(), Some(cache)).await?;
         let client: AuthCodeSpotify = AuthCodeSpotify::default();
+        let secret: [u8; 16] = rand::random();
         let account = SpotifyAccount {
             credentials,
             session,
             client,
             expiration: RwLock::new(Expiration::default()),
+            secret,
         };
 
         Ok(account)
@@ -104,10 +108,23 @@ impl SpotifyAccount {
         expiration.update_expires_in(token.expires_in as i64);
         Ok(())
     }
+
+    /// AES-128 encryption with `SpotifyAccount.secret`
+    pub fn encrypt(&self, buf: &[u8]) -> (Vec<u8>, [u8; 16]) {
+        let iv: [u8; 16] = rand::random();
+        let enc = crypto::encrypt_aes128(&self.secret, &iv, buf);
+        (enc, iv)
+    }
+
+    /// AES-128 decryption with `SpotifyAccount.secret`
+    pub fn decrypt(&self, iv: &[u8], buf: &[u8]) -> Result<Vec<u8>, ServerError> {
+        crypto::decrypt_aes128(&self.secret, &iv, buf)
+            .map_err(|e| ServerError::InnerError(format!("{:?}", e)))
+    }
 }
 
 /// UserName Wrapper
-#[derive(Hash, Eq, PartialEq, serde::Deserialize)]
+#[derive(Hash, Eq, PartialEq, serde::Deserialize, Clone)]
 pub struct UserName(String);
 
 impl From<&str> for UserName {

@@ -66,6 +66,11 @@ pub fn route() -> actix_web::Scope {
         )
         // Audios apis
         .route("/audio/{id}", web::get().to(audios::audio))
+        .route("/audio-uri/{id}", web::get().to(audios::audio_uri))
+        .route(
+            "/audio-stream-with-sign",
+            web::get().to(audios::audio_stream_with_sign),
+        )
         .route("/audio-stream/{id}", web::get().to(audios::audio_stream))
         // Recommendations
         .route(

@@ -8,11 +8,19 @@ use librespot::{
     metadata::{AudioItem, FileFormat},
 };
 
-use crate::{app_store::AppStore, errors::ServerError, session::ServerSession};
+use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 
-use super::utils::ok_with_body_response;
+use crate::{
+    account::{SpotifyAccount, UserName},
+    app_store::AppStore,
+    common::hex,
+    endpoints::utils::ok_with_body_response,
+    errors::ServerError,
+    session::ServerSession,
+};
 
 /// Path: GET `/audio/{id}`
+/// Audio files information
 #[tracing::instrument(skip(app_store, session))]
 pub async fn audio(
     id: web::Path<String>,
@@ -30,7 +38,69 @@ pub async fn audio(
     ok_with_body_response(format!("{:?}", result))
 }
 
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+struct UserNameTrackId {
+    username: String,
+    track_id: String,
+}
+
+/// Path: GET `/audio-uri/{id}`
+/// Audio direct uri which returns a uri to the track audio stream
+#[tracing::instrument(skip(app_store, session))]
+pub async fn audio_uri(
+    id: web::Path<String>,
+    app_store: web::Data<AppStore>,
+    session: ServerSession,
+) -> Result<HttpResponse, ServerError> {
+    let username = session.get_username()?;
+    let account = app_store.authorize(username.clone()).await?;
+
+    let audio_sign = UserNameTrackId {
+        username: username.as_ref().to_owned(),
+        track_id: id.to_string(),
+    };
+
+    let (enc, iv) = account.encrypt(serde_json::to_string(&audio_sign)?.as_bytes());
+
+    let url = format!(
+        "audio-stream-with-sign?sign={}&iv={}&username={}",
+        hex::encode(&enc),
+        hex::encode(&iv),
+        utf8_percent_encode(username.as_ref(), NON_ALPHANUMERIC),
+    );
+
+    ok_with_body_response(url)
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct AudioSign {
+    sign: String,
+    iv: String,
+    username: String,
+}
+
+/// Path: GET `/audio-stream-with-sign/{id}`
+/// The track audio stream with sign parameters
+#[tracing::instrument(skip(app_store))]
+pub async fn audio_stream_with_sign(
+    audio_sign: web::Query<AudioSign>,
+    app_store: web::Data<AppStore>,
+) -> Result<HttpResponse, ServerError> {
+    let iv = hex::decode(audio_sign.iv.as_str())?;
+    let sign = hex::decode(audio_sign.sign.as_str())?;
+
+    let username: UserName = audio_sign.username.as_str().into();
+    let account = app_store.authorize(username).await?;
+
+    let dec = account.decrypt(&iv, &sign)?;
+    match serde_json::from_slice::<UserNameTrackId>(&dec) {
+        Ok(username_trackid) => audio_cn_stream(&username_trackid.track_id, &account).await,
+        Err(_) => Err(ServerError::AuthenticationError),
+    }
+}
+
 /// Path: GET `/audio-stream/{id}`
+/// The track audio stream without sign but needs Cookies
 #[tracing::instrument(skip(app_store, session))]
 pub async fn audio_stream(
     id: web::Path<String>,
@@ -40,8 +110,13 @@ pub async fn audio_stream(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
-    let spotify_id = SpotifyId::from_uri(&format!("spotify:track:{}", id.as_str()))
-        .map_err(|_| ServerError::ParamsError(format!("Track id {} is invalid", id.as_str())))?;
+    audio_cn_stream(id.as_str(), &account).await
+}
+
+/// Audio content stream
+async fn audio_cn_stream(id: &str, account: &SpotifyAccount) -> Result<HttpResponse, ServerError> {
+    let spotify_id = SpotifyId::from_uri(&format!("spotify:track:{}", id))
+        .map_err(|_| ServerError::ParamsError(format!("Track id {} is invalid", id)))?;
 
     let audio_item = AudioItem::get_audio_item(&account.session, spotify_id).await?;
 
@@ -65,8 +140,12 @@ pub async fn audio_stream(
     let mut decrypted_file = AudioDecrypt::new(key, enc_file);
     decrypted_file.seek(SeekFrom::Start(0xa7)).unwrap();
 
+    let size = 1024 * 10;
+    let mut buf = Vec::with_capacity(size);
+    unsafe {
+        buf.set_len(size);
+    }
     let s = async_stream::stream! {
-        let mut buf = [0u8; 1024 * 2];
         loop {
             let n = decrypted_file.read(&mut buf);
             match n {
