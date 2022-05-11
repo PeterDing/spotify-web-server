@@ -3,21 +3,17 @@ use std::{
     path::Path,
 };
 
+use chrono::{DateTime, Utc};
 use librespot::core::{
     authentication::Credentials, cache::Cache, config::SessionConfig, keymaster, session::Session,
 };
-
 use rspotify::AuthCodeSpotify;
-
-use chrono::{DateTime, Utc};
 use tokio::sync::RwLock;
+use url::Url;
 
 use crate::{common::crypto, errors::ServerError};
 
 pub mod utils;
-
-const CLIENT_ID: &str = "06e33fd028714708827e268040efb778";
-const SCOPE: &str = "user-read-private,playlist-read-private,playlist-read-collaborative,playlist-modify-public,playlist-modify-private,user-follow-modify,user-follow-read,user-library-read,user-library-modify,user-top-read,user-read-recently-played";
 
 struct Expiration {
     expires_in: i64,
@@ -50,8 +46,13 @@ pub struct SpotifyAccount {
 }
 
 impl SpotifyAccount {
-    pub async fn new(credentials: Credentials, cache: Cache) -> Result<Self, ServerError> {
-        let config = SessionConfig::default();
+    pub async fn new(
+        credentials: Credentials,
+        cache: Cache,
+        proxy: Option<Url>,
+    ) -> Result<Self, ServerError> {
+        let mut config = SessionConfig::default();
+        config.proxy = proxy;
         let session = Session::connect(config, credentials.clone(), Some(cache)).await?;
         let client: AuthCodeSpotify = AuthCodeSpotify::default();
         let secret: [u8; 16] = rand::random();
@@ -69,12 +70,13 @@ impl SpotifyAccount {
     pub async fn create<P>(
         credentials: Credentials,
         cache_dir: Option<P>,
+        proxy: Option<Url>,
     ) -> Result<Self, ServerError>
     where
         P: AsRef<Path>,
     {
         let cache = Cache::new(cache_dir, None, None)?;
-        SpotifyAccount::new(credentials, cache).await
+        SpotifyAccount::new(credentials, cache, proxy).await
     }
 
     async fn token_expires(&self) -> bool {
@@ -83,14 +85,14 @@ impl SpotifyAccount {
         delta.num_seconds() + 60 > expiration.expires_in
     }
 
-    pub async fn update_token(&self) -> Result<(), ServerError> {
+    pub async fn update_token(&self, client_id: &str, scope: &str) -> Result<(), ServerError> {
         if !self.token_expires().await {
             return Ok(());
         }
 
         let mut expiration = self.expiration.write().await;
 
-        let token = keymaster::get_token(&self.session, CLIENT_ID, SCOPE).await?;
+        let token = keymaster::get_token(&self.session, client_id, scope).await?;
         let mut rtoken = self
             .client
             .token

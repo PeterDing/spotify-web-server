@@ -1,14 +1,7 @@
-use std::path::Path;
-
 use actix_web::{web, HttpResponse};
 
-use librespot::core::authentication::Credentials;
-
 use crate::{
-    account::{
-        utils::{load_credentials, CONFIG_ROOT},
-        SpotifyAccount, UserName,
-    },
+    account::UserName,
     app_store::AppStore,
     endpoints::params::{LoginData, UserNameData},
     errors::ServerError,
@@ -21,25 +14,12 @@ pub async fn login(
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
-    let to_cache = form.cache.map(|v| if v == 1 { v } else { 0 }).unwrap_or(0);
+    let to_cache = form.cache.map(|v| if v == 1 { v } else { 0 }).unwrap_or(0) == 1;
 
-    let cache_dir = match to_cache {
-        1 => Some(Path::new(CONFIG_ROOT).join(&form.username)),
-        _ => None,
-    };
-
-    let credentials = if let Some(ref cd) = cache_dir {
-        load_credentials(cd).unwrap_or_else(|| {
-            Credentials::with_password(form.username.clone(), form.password.clone())
-        })
-    } else {
-        Credentials::with_password(form.username.clone(), form.password.clone())
-    };
-
-    let account = SpotifyAccount::create(credentials, cache_dir).await?;
     app_store
-        .insert_account(form.username.clone(), account)
-        .await;
+        .create_account(&form.username, &form.password, to_cache)
+        .await?;
+
     session.insert_username(&form.username)?;
 
     Ok(HttpResponse::Ok().finish())
