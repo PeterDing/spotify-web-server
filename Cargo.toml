@@ -34,10 +34,12 @@ anyhow = "1"
 percent-encoding = "2"
 url = "2"
 toml = "0.5"
+clap = { version = "3", features = ["derive", "cargo"] }
 
 # Crypto
 aes = "0.8"
 cbc = { version = "0.1", features = ["alloc", "block-padding"] }
+sha2 = "0.10"
 
 # Tracing
 tracing = "0.1"
