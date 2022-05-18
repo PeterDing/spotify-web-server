@@ -38,15 +38,15 @@ impl Cmd {
         if let Some(secret) = &self.session_secret {
             let mut hasher = sha2::Sha512::new();
             hasher.update(secret.as_bytes());
-            let session_secret = hasher.finalize();
-            result.copy_from_slice(&session_secret[..]);
+            let output = hasher.finalize();
+            result.copy_from_slice(&output[..]);
         } else {
             let mut rand_array = [0u8; 64];
             rand::thread_rng().fill_bytes(&mut rand_array);
             let mut hasher = sha2::Sha256::new();
             hasher.update(&rand_array);
-            let session_secret = hasher.finalize();
-            result.copy_from_slice(&session_secret[..]);
+            let output = hasher.finalize();
+            result.copy_from_slice(&output[..]);
         }
 
         result
