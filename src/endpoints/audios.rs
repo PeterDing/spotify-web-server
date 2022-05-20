@@ -63,7 +63,7 @@ pub async fn audio_uri(
     let (enc, iv) = account.encrypt(serde_json::to_string(&audio_sign)?.as_bytes());
 
     let url = format!(
-        "audio-stream-with-sign?sign={}&iv={}&username={}",
+        "/audio-stream-with-sign?sign={}&iv={}&username={}",
         hex::encode(&enc),
         hex::encode(&iv),
         utf8_percent_encode(username.as_ref(), NON_ALPHANUMERIC),
