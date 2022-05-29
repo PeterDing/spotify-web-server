@@ -16,7 +16,7 @@ path = "src/main.rs"
 [dependencies]
 # Async
 futures = "0.3"
-tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "signal", "sync", "process"] }
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "signal", "sync", "process", "time"] }
 async-stream = "0.3.3"
 actix-web = { version = "4", features = ["secure-cookies"] }
 actix-session = { version = "0.6", features = ["cookie-session"] }
