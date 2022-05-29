@@ -17,7 +17,7 @@ pub fn encode(bytes: &[u8]) -> String {
 
     for c in bytes.iter() {
         hex.push(HEX_CHARS_UPPER[(c >> 4) as usize] as char);
-        hex.push(HEX_CHARS_UPPER[(c & &0x0F) as usize] as char);
+        hex.push(HEX_CHARS_UPPER[(c & 0x0F) as usize] as char);
     }
     hex
 }
