@@ -1,7 +1,10 @@
 use std::{
     collections::{HashMap, HashSet},
     path::Path,
+    time::Duration,
 };
+
+use tokio::time::{timeout_at, Instant};
 
 use chrono::{DateTime, Utc};
 use librespot::core::{
@@ -38,9 +41,11 @@ impl Default for Expiration {
 
 pub struct SpotifyAccount {
     pub credentials: Credentials,
-    pub session: Session,
+    pub session: RwLock<Session>,
     pub client: AuthCodeSpotify,
     expiration: RwLock<Expiration>,
+    cache: Option<Cache>,
+    proxy: Option<Url>,
     // Secret key
     secret: [u8; 16],
 }
@@ -51,16 +56,20 @@ impl SpotifyAccount {
         cache: Cache,
         proxy: Option<Url>,
     ) -> Result<Self, ServerError> {
-        let mut config = SessionConfig::default();
-        config.proxy = proxy;
-        let session = Session::connect(config, credentials.clone(), Some(cache)).await?;
+        let config = SessionConfig {
+            proxy: proxy.clone(),
+            ..Default::default()
+        };
+        let session = Session::connect(config, credentials.clone(), Some(cache.clone())).await?;
         let client: AuthCodeSpotify = AuthCodeSpotify::default();
         let secret: [u8; 16] = rand::random();
         let account = SpotifyAccount {
             credentials,
-            session,
+            session: RwLock::new(session),
             client,
             expiration: RwLock::new(Expiration::default()),
+            cache: Some(cache),
+            proxy,
             secret,
         };
 
@@ -85,20 +94,14 @@ impl SpotifyAccount {
         delta.num_seconds() + 60 > expiration.expires_in
     }
 
-    pub async fn update_token(&self, client_id: &str, scope: &str) -> Result<(), ServerError> {
-        if !self.token_expires().await {
-            return Ok(());
-        }
-
-        let mut expiration = self.expiration.write().await;
-
-        let token = keymaster::get_token(&self.session, client_id, scope).await?;
+    async fn set_token(&self, token: keymaster::Token) -> Result<(), ServerError> {
         let mut rtoken = self
             .client
             .token
             .lock()
             .await
             .map_err(|e| ServerError::InnerError(format!("can't update token: {:?}", e)))?;
+
         *rtoken = Some(rspotify::Token {
             access_token: token.access_token.clone(),
             expires_in: chrono::Duration::seconds(token.expires_in.into()),
@@ -107,8 +110,53 @@ impl SpotifyAccount {
             refresh_token: None,
         });
 
+        let mut expiration = self.expiration.write().await;
         expiration.update_expires_in(token.expires_in as i64);
         Ok(())
+    }
+
+    async fn reset_session(&self) {
+        loop {
+            let config = SessionConfig {
+                proxy: self.proxy.clone(),
+                ..Default::default()
+            };
+
+            let fut = Session::connect(config, self.credentials.clone(), self.cache.clone());
+            if let Ok(Ok(new_session)) =
+                timeout_at(Instant::now() + Duration::from_secs(5), fut).await
+            {
+                let mut session = self.session.write().await;
+                *session = new_session;
+                break;
+            }
+        }
+    }
+
+    pub async fn update_token(&self, client_id: &str, scope: &str) -> Result<(), ServerError> {
+        if !self.token_expires().await {
+            return Ok(());
+        }
+
+        tracing::info!("Token expires");
+        let session = self.session.read().await;
+        if let Ok(token) = keymaster::get_token(&session, client_id, scope).await {
+            return self.set_token(token).await;
+        }
+
+        tracing::warn!("keymaster::get_token fails");
+
+        drop(session);
+
+        tracing::info!("Reset librespot session");
+
+        // This is MercuryError. There is no idea why it occurs.
+        // So, we just force to reset the session.
+        self.reset_session().await;
+
+        let session = self.session.read().await;
+        let token = keymaster::get_token(&session, client_id, scope).await?;
+        self.set_token(token).await
     }
 
     /// AES-128 encryption with `SpotifyAccount.secret`
@@ -120,7 +168,7 @@ impl SpotifyAccount {
 
     /// AES-128 decryption with `SpotifyAccount.secret`
     pub fn decrypt(&self, iv: &[u8], buf: &[u8]) -> Result<Vec<u8>, ServerError> {
-        crypto::decrypt_aes128(&self.secret, &iv, buf)
+        crypto::decrypt_aes128(&self.secret, iv, buf)
             .map_err(|e| ServerError::InnerError(format!("{:?}", e)))
     }
 }

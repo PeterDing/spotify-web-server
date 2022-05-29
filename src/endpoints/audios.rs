@@ -33,7 +33,8 @@ pub async fn audio(
     let spotify_id = SpotifyId::from_uri(&format!("spotify:track:{}", id.as_str()))
         .map_err(|_| ServerError::ParamsError(format!("Track id {} is invalid", id.as_str())))?;
 
-    let result = AudioItem::get_audio_item(&account.session, spotify_id).await?;
+    let account_session = &account.session.read().await;
+    let result = AudioItem::get_audio_item(&account_session, spotify_id).await?;
 
     ok_with_body_response(format!("{:?}", result))
 }
@@ -63,12 +64,11 @@ pub async fn audio_uri(
     let (enc, iv) = account.encrypt(serde_json::to_string(&audio_sign)?.as_bytes());
 
     let url = format!(
-        "/audio-stream-with-sign?sign={}&iv={}&username={}",
+        "/audio-stream-with-sign/audio.ogg?sign={}&iv={}&username={}",
         hex::encode(&enc),
         hex::encode(&iv),
         utf8_percent_encode(username.as_ref(), NON_ALPHANUMERIC),
     );
-
     ok_with_body_response(url)
 }
 
@@ -118,19 +118,19 @@ async fn audio_cn_stream(id: &str, account: &SpotifyAccount) -> Result<HttpRespo
     let spotify_id = SpotifyId::from_uri(&format!("spotify:track:{}", id))
         .map_err(|_| ServerError::ParamsError(format!("Track id {} is invalid", id)))?;
 
-    let audio_item = AudioItem::get_audio_item(&account.session, spotify_id).await?;
+    let account_session = &account.session.read().await;
+    let audio_item = AudioItem::get_audio_item(&account_session, spotify_id).await?;
 
     // let file_id = audio_item.files.get(&FileFormat::OGG_VORBIS_96).unwrap();
     let file_id = audio_item.files.get(&FileFormat::OGG_VORBIS_320).unwrap();
 
-    let key = account
-        .session
+    let key = account_session
         .audio_key()
         .request(spotify_id, *file_id)
         .await
         .expect("audio key failed");
 
-    let enc_file = AudioFile::open(&account.session, *file_id, 500 * 1024, true)
+    let enc_file = AudioFile::open(&account_session, *file_id, 500 * 1024, true)
         .await
         .unwrap();
 
@@ -141,10 +141,7 @@ async fn audio_cn_stream(id: &str, account: &SpotifyAccount) -> Result<HttpRespo
     decrypted_file.seek(SeekFrom::Start(0xa7)).unwrap();
 
     let size = 1024 * 10;
-    let mut buf = Vec::with_capacity(size);
-    unsafe {
-        buf.set_len(size);
-    }
+    let mut buf = vec![0u8; size];
     let s = async_stream::stream! {
         loop {
             let n = decrypted_file.read(&mut buf);
@@ -160,5 +157,5 @@ async fn audio_cn_stream(id: &str, account: &SpotifyAccount) -> Result<HttpRespo
         }
     };
 
-    Ok(HttpResponse::Ok().streaming(s))
+    Ok(HttpResponse::Ok().content_type("audio/ogg").streaming(s))
 }
