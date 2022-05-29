@@ -36,6 +36,9 @@ impl From<MercuryError> for ServerError {
 
 impl ResponseError for ServerError {
     fn status_code(&self) -> StatusCode {
-        StatusCode::INTERNAL_SERVER_ERROR
+        match self {
+            ServerError::AuthenticationError => StatusCode::FORBIDDEN,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        }
     }
 }
