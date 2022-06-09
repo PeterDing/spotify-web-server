@@ -36,7 +36,7 @@ impl AppStore {
             let creds_dir = entry.path();
             if let Some(credentials) = load_credentials(creds_dir.clone()) {
                 let username = creds_dir.file_name().unwrap().to_str().unwrap();
-                let cache = Cache::new(Some(creds_dir.clone()), None, None)?;
+                let cache = Cache::new(Some(creds_dir.clone()), None, None, None)?;
                 let account = SpotifyAccount::new(credentials, cache, self.proxy.clone()).await?;
                 self.insert_account(username, account).await;
             }

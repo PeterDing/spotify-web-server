@@ -60,7 +60,8 @@ impl SpotifyAccount {
             proxy: proxy.clone(),
             ..Default::default()
         };
-        let session = Session::connect(config, credentials.clone(), Some(cache.clone())).await?;
+        let (session, credentials) =
+            Session::connect(config, credentials.clone(), Some(cache.clone()), true).await?;
         let client: AuthCodeSpotify = AuthCodeSpotify::default();
         let secret: [u8; 16] = rand::random();
         let account = SpotifyAccount {
@@ -84,7 +85,7 @@ impl SpotifyAccount {
     where
         P: AsRef<Path>,
     {
-        let cache = Cache::new(cache_dir, None, None)?;
+        let cache = Cache::new(cache_dir, None, None, None)?;
         SpotifyAccount::new(credentials, cache, proxy).await
     }
 
@@ -122,8 +123,8 @@ impl SpotifyAccount {
                 ..Default::default()
             };
 
-            let fut = Session::connect(config, self.credentials.clone(), self.cache.clone());
-            if let Ok(Ok(new_session)) =
+            let fut = Session::connect(config, self.credentials.clone(), self.cache.clone(), true);
+            if let Ok(Ok((new_session, _))) =
                 timeout_at(Instant::now() + Duration::from_secs(5), fut).await
             {
                 let mut session = self.session.write().await;

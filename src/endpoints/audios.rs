@@ -114,6 +114,7 @@ pub async fn audio_stream(
 }
 
 /// Audio content stream
+#[tracing::instrument(skip(account))]
 async fn audio_cn_stream(id: &str, account: &SpotifyAccount) -> Result<HttpResponse, ServerError> {
     let spotify_id = SpotifyId::from_uri(&format!("spotify:track:{}", id))
         .map_err(|_| ServerError::ParamsError(format!("Track id {} is invalid", id)))?;
@@ -123,6 +124,12 @@ async fn audio_cn_stream(id: &str, account: &SpotifyAccount) -> Result<HttpRespo
 
     // let file_id = audio_item.files.get(&FileFormat::OGG_VORBIS_96).unwrap();
     let file_id = audio_item.files.get(&FileFormat::OGG_VORBIS_320).unwrap();
+    tracing::info!(
+        "Audio file id: {}",
+        file_id
+            .to_base16()
+            .unwrap_or("file_id decode failed".to_owned())
+    );
 
     let key = account_session
         .audio_key()
@@ -130,9 +137,13 @@ async fn audio_cn_stream(id: &str, account: &SpotifyAccount) -> Result<HttpRespo
         .await
         .expect("audio key failed");
 
+    tracing::info!("Get audio key: {:?}", key);
+
     let enc_file = AudioFile::open(&account_session, *file_id, 500 * 1024, true)
         .await
         .unwrap();
+
+    tracing::info!("Get encrypt file");
 
     let stream_loader_controller = enc_file.get_stream_loader_controller();
     stream_loader_controller.set_stream_mode();
@@ -156,6 +167,8 @@ async fn audio_cn_stream(id: &str, account: &SpotifyAccount) -> Result<HttpRespo
             }
         }
     };
+
+    tracing::info!("Start audio stream");
 
     Ok(HttpResponse::Ok().content_type("audio/ogg").streaming(s))
 }
