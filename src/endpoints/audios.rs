@@ -1,6 +1,10 @@
-use std::io::{Read, Seek, SeekFrom};
+use std::{
+    io::{Read, Seek, SeekFrom},
+    time::Duration,
+};
 
 use actix_web::{web, HttpResponse};
+use tokio_stream::StreamExt;
 
 use librespot::{
     audio::{AudioDecrypt, AudioFile},
@@ -166,7 +170,10 @@ async fn audio_cn_stream(id: &str, account: &SpotifyAccount) -> Result<HttpRespo
                 Err(e) => yield Err(e),
             }
         }
-    };
+    }
+    .timeout(Duration::from_secs(1))
+    .take_while(Result::is_ok)
+    .map(|d| d.unwrap());
 
     tracing::info!("Start audio stream");
 
