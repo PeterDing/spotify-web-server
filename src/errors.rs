@@ -1,6 +1,8 @@
 use actix_web::{http::StatusCode, ResponseError};
 
-use librespot::core::{mercury::MercuryError, session::SessionError};
+use librespot::core::{
+    audio_key::AudioKeyError, channel::ChannelError, mercury::MercuryError, session::SessionError,
+};
 
 use rspotify::ClientError;
 
@@ -26,11 +28,25 @@ pub enum ServerError {
     ParamsError(String),
     #[error("IO Error: {0}")]
     IOError(#[from] std::io::Error),
+    #[error("Audio Error: {0}")]
+    AudioError(String),
 }
 
 impl From<MercuryError> for ServerError {
     fn from(error: MercuryError) -> Self {
         ServerError::TokenError(error)
+    }
+}
+
+impl From<ChannelError> for ServerError {
+    fn from(error: ChannelError) -> Self {
+        ServerError::AudioError(format!("{:?}", error))
+    }
+}
+
+impl From<AudioKeyError> for ServerError {
+    fn from(error: AudioKeyError) -> Self {
+        ServerError::AudioError(format!("{:?}", error))
     }
 }
 

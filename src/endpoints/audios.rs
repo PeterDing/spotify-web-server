@@ -135,25 +135,23 @@ async fn audio_cn_stream(id: &str, account: &SpotifyAccount) -> Result<HttpRespo
             .unwrap_or("file_id decode failed".to_owned())
     );
 
-    let key = account_session
-        .audio_key()
-        .request(spotify_id, *file_id)
-        .await
-        .expect("audio key failed");
-
-    tracing::info!("Get audio key: {:?}", key);
-
-    let enc_file = AudioFile::open(&account_session, *file_id, 500 * 1024, true)
-        .await
-        .unwrap();
+    let enc_file = AudioFile::open(&account_session, *file_id, 500 * 1024, true).await?;
 
     tracing::info!("Get encrypt file");
 
     let stream_loader_controller = enc_file.get_stream_loader_controller();
     stream_loader_controller.set_stream_mode();
 
+    let key = account_session
+        .audio_key()
+        .request(spotify_id, *file_id)
+        .await?;
+    // .expect("audio key failed");
+
+    tracing::info!("Get audio key: {:?}", key);
+
     let mut decrypted_file = AudioDecrypt::new(key, enc_file);
-    decrypted_file.seek(SeekFrom::Start(0xa7)).unwrap();
+    decrypted_file.seek(SeekFrom::Start(0xa7))?;
 
     let size = 1024 * 10;
     let mut buf = vec![0u8; size];
