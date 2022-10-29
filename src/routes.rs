@@ -1,6 +1,6 @@
 use crate::endpoints::{
     albums, artists, audios, categories, episodes, genres, health_check, login, markets, playlists,
-    recommends, search, shows, tracks,
+    recommends, search, shows, tracks, users,
 };
 
 use actix_web::web;
@@ -11,6 +11,9 @@ pub fn route() -> actix_web::Scope {
         // Login api
         .route("/login", web::post().to(login::login))
         .route("/miracle", web::get().to(login::miracle))
+        // User api
+        .route("/me", web::get().to(users::me))
+        .route("/users/{id}", web::get().to(users::user))
         // Search api
         .route("/search", web::get().to(search::search))
         // Albums apis
