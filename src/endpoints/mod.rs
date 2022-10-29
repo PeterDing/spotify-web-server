@@ -14,4 +14,5 @@ pub mod recommends;
 pub mod search;
 pub mod shows;
 pub mod tracks;
+pub mod users;
 pub mod utils;
