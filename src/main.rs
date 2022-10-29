@@ -1,5 +1,8 @@
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
-use actix_web::{cookie::Key, web, App, HttpServer};
+use actix_web::{
+    cookie::{Key, SameSite},
+    web, App, HttpServer,
+};
 use clap::Parser;
 use tracing_actix_web::TracingLogger;
 use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
@@ -30,10 +33,17 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(TracingLogger::default())
-            .wrap(SessionMiddleware::new(
-                CookieSessionStore::default(),
-                Key::from(&session_secret),
-            ))
+            .wrap(
+                SessionMiddleware::builder(
+                    CookieSessionStore::default(),
+                    Key::from(&session_secret),
+                )
+                .cookie_secure(false)
+                .cookie_same_site(SameSite::None)
+                .cookie_http_only(false)
+                .cookie_domain(None)
+                .build(),
+            )
             .service(route())
             .app_data(app_store.clone())
     })
