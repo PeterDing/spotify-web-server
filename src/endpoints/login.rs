@@ -14,7 +14,7 @@ pub async fn login(
     app_store: web::Data<AppStore>,
     session: ServerSession,
 ) -> Result<HttpResponse, ServerError> {
-    let to_cache = form.cache.map(|v| if v == 1 { v } else { 0 }).unwrap_or(0) == 1;
+    let to_cache = form.cache.unwrap_or(0) == 1;
 
     app_store
         .create_account(&form.username, &form.password, to_cache)
