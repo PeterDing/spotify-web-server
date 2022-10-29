@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use tokio::time::{timeout_at, Instant};
+use tokio::{sync, time::timeout};
 
 use chrono::{DateTime, Utc};
 use librespot::core::{
@@ -48,6 +48,7 @@ pub struct SpotifyAccount {
     proxy: Option<Url>,
     // Secret key
     secret: [u8; 16],
+    lock: sync::Mutex<()>,
 }
 
 impl SpotifyAccount {
@@ -72,6 +73,7 @@ impl SpotifyAccount {
             cache: Some(cache),
             proxy,
             secret,
+            lock: sync::Mutex::new(()),
         };
 
         Ok(account)
@@ -92,10 +94,15 @@ impl SpotifyAccount {
     async fn token_expires(&self) -> bool {
         let expiration = self.expiration.read().await;
         let delta = Utc::now() - expiration.token_expiration;
-        delta.num_seconds() + 60 > expiration.expires_in
+        delta.num_seconds() + 10 * 60 > expiration.expires_in
     }
 
     async fn set_token(&self, token: keymaster::Token) -> Result<(), ServerError> {
+        println!(
+            "----------------\n================ toke.expires_in: {}\n----------------",
+            token.expires_in
+        );
+
         let mut rtoken = self
             .client
             .token
@@ -116,25 +123,31 @@ impl SpotifyAccount {
         Ok(())
     }
 
-    async fn reset_session(&self) {
+    pub async fn reset_session(&self, client_id: &str, scope: &str) {
         loop {
+            tracing::info!("Reset librespot session");
             let config = SessionConfig {
                 proxy: self.proxy.clone(),
                 ..Default::default()
             };
 
             let fut = Session::connect(config, self.credentials.clone(), self.cache.clone(), true);
-            if let Ok(Ok((new_session, _))) =
-                timeout_at(Instant::now() + Duration::from_secs(5), fut).await
-            {
+            if let Ok(Ok((new_session, _))) = timeout(Duration::from_secs(5), fut).await {
                 let mut session = self.session.write().await;
                 *session = new_session;
+                if let Ok(token) = keymaster::get_token(&session, client_id, scope).await {
+                    self.set_token(token).await.unwrap();
+                }
                 break;
+            } else {
+                tracing::warn!("Fail reset session");
             }
         }
     }
 
     pub async fn update_token(&self, client_id: &str, scope: &str) -> Result<(), ServerError> {
+        let lock = self.lock.lock().await;
+
         if !self.token_expires().await {
             return Ok(());
         }
@@ -149,15 +162,39 @@ impl SpotifyAccount {
 
         drop(session);
 
-        tracing::info!("Reset librespot session");
-
         // This is MercuryError. There is no idea why it occurs.
         // So, we just force to reset the session.
-        self.reset_session().await;
+        self.reset_session(client_id, scope).await;
 
-        let session = self.session.read().await;
-        let token = keymaster::get_token(&session, client_id, scope).await?;
-        self.set_token(token).await
+        Ok(())
+    }
+
+    pub async fn retry_update_token(
+        &self,
+        client_id: &str,
+        scope: &str,
+        retries: usize,
+    ) -> Result<(), ServerError> {
+        for i in 0..retries {
+            if i > 0 {
+                tracing::warn!("Retry update token by {}", i);
+            }
+            match timeout(Duration::from_secs(10), self.update_token(client_id, scope)).await {
+                Ok(result) => return result,
+                Err(err) => {
+                    if i + 1 == retries {
+                        return Err(ServerError::InnerError(format!(
+                            "Failed to update token after {} retries, the last error is {}",
+                            retries, err
+                        )));
+                    }
+                }
+            }
+        }
+        return Err(ServerError::InnerError(format!(
+            "Failed to update token after {} retries",
+            retries
+        )));
     }
 
     /// AES-128 encryption with `SpotifyAccount.secret`

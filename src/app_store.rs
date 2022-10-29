@@ -6,10 +6,15 @@ use url::Url;
 
 use crate::{
     account::{utils::load_credentials, SpotifyAccount, SpotifyAccounts, UserName},
+    common::retry::retry,
     errors::ServerError,
 };
 
-pub const DEFAULT_CLIENT_ID: &str = "06e33fd028714708827e268040efb778";
+// pub const DEFAULT_CLIENT_ID: &str = "a7cebe3e317645469d64c7d374a1aa10";
+// pub const DEFAULT_CLIENT_ID: &str = "d420a117a32841c2b3474932e49fb54b";
+// pub const DEFAULT_SCOPE: &str = "user-read-private,playlist-read-private,playlist-read-collaborative,playlist-modify-public,playlist-modify-private,user-follow-modify,user-follow-read,user-library-read,user-library-modify,user-top-read,user-read-recently-played";
+
+pub const DEFAULT_CLIENT_ID: &str = "d420a117a32841c2b3474932e49fb54b";
 pub const DEFAULT_SCOPE: &str = "user-read-private,playlist-read-private,playlist-read-collaborative,playlist-modify-public,playlist-modify-private,user-follow-modify,user-follow-read,user-library-read,user-library-modify,user-top-read,user-read-recently-played";
 
 /// App Store Data
@@ -83,7 +88,14 @@ impl AppStore {
         match account {
             Ok(a) => {
                 // Update Token when it expires
-                a.update_token(&self.client_id, DEFAULT_SCOPE).await?;
+
+                // retry(
+                //     || Box::pin(a.update_token(&self.client_id, DEFAULT_SCOPE)),
+                //     3,
+                // )
+                // .await?;
+                a.retry_update_token(&self.client_id, DEFAULT_SCOPE, 3)
+                    .await?;
                 Ok(a)
             }
             Err(_) => Err(ServerError::AuthenticationError),
