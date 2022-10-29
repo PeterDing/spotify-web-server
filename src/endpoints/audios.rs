@@ -4,6 +4,7 @@ use std::{
 };
 
 use actix_web::{web, HttpResponse};
+use tokio::time::timeout;
 use tokio_stream::StreamExt;
 
 use librespot::{
@@ -98,7 +99,10 @@ pub async fn audio_stream_with_sign(
 
     let dec = account.decrypt(&iv, &sign)?;
     match serde_json::from_slice::<UserNameTrackId>(&dec) {
-        Ok(username_trackid) => audio_cn_stream(&username_trackid.track_id, &account).await,
+        Ok(username_trackid) => {
+            // retry_audio_cn_stream(&username_trackid.track_id, &account, 3).await
+            audio_cn_stream(&username_trackid.track_id, &account).await
+        }
         Err(_) => Err(ServerError::AuthenticationError),
     }
 }
@@ -114,20 +118,30 @@ pub async fn audio_stream(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
+    // retry_audio_cn_stream(id.as_str(), &account, 3).await
     audio_cn_stream(id.as_str(), &account).await
 }
 
 /// Audio content stream
 #[tracing::instrument(skip(account))]
-async fn audio_cn_stream(id: &str, account: &SpotifyAccount) -> Result<HttpResponse, ServerError> {
+async fn audio_cn_without_stream(
+    id: &str,
+    account: &SpotifyAccount,
+) -> Result<HttpResponse, ServerError> {
+    println!("------------ audio_cn_without_stream start");
     let spotify_id = SpotifyId::from_uri(&format!("spotify:track:{}", id))
         .map_err(|_| ServerError::ParamsError(format!("Track id {} is invalid", id)))?;
 
     let account_session = &account.session.read().await;
-    let audio_item = AudioItem::get_audio_item(&account_session, spotify_id).await?;
+    println!("------------ audio_cn_without_stream: Gotten account session");
+    tracing::info!("Gotten account session");
 
-    // let file_id = audio_item.files.get(&FileFormat::OGG_VORBIS_96).unwrap();
+    let audio_item = AudioItem::get_audio_item(&account_session, spotify_id).await?;
+    println!("------------ audio_cn_without_stream: Gotten audio item");
+    tracing::info!("Gotten audio item");
+
     let file_id = audio_item.files.get(&FileFormat::OGG_VORBIS_320).unwrap();
+    println!("------------ audio_cn_without_stream: Gotten audio file");
     tracing::info!(
         "Audio file id: {}",
         file_id
@@ -136,8 +150,8 @@ async fn audio_cn_stream(id: &str, account: &SpotifyAccount) -> Result<HttpRespo
     );
 
     let enc_file = AudioFile::open(&account_session, *file_id, 500 * 1024, true).await?;
-
-    tracing::info!("Get encrypt file");
+    println!("------------ audio_cn_without_stream: Gotten encrypt file");
+    tracing::info!("Gotten encrypt file");
 
     let stream_loader_controller = enc_file.get_stream_loader_controller();
     stream_loader_controller.set_stream_mode();
@@ -146,9 +160,67 @@ async fn audio_cn_stream(id: &str, account: &SpotifyAccount) -> Result<HttpRespo
         .audio_key()
         .request(spotify_id, *file_id)
         .await?;
-    // .expect("audio key failed");
 
-    tracing::info!("Get audio key: {:?}", key);
+    println!("------------ audio_cn_without_stream: Gotten audio key");
+    tracing::info!("Gotten audio key: {:?}", key);
+
+    let mut decrypted_file = AudioDecrypt::new(key, enc_file);
+    decrypted_file.seek(SeekFrom::Start(0xa7))?;
+
+    let size = 1024 * 10;
+    let mut buf = vec![0u8; size];
+    match decrypted_file.read_to_end(&mut buf) {
+        Ok(n) => {
+            println!("------------ audio_cn_without_stream: Start audio stream");
+            tracing::info!("Start audio stream");
+            return Ok(HttpResponse::Ok().content_type("audio/ogg").body(buf));
+        }
+        Err(e) => {
+            println!("------------ audio_cn_without_stream: stream timeout");
+            tracing::warn!("stream data is timeout");
+            return Err(ServerError::AudioError(format!("{:?}", e)));
+        }
+    }
+}
+
+/// Audio content stream
+#[tracing::instrument(skip(account))]
+async fn audio_cn_stream(id: &str, account: &SpotifyAccount) -> Result<HttpResponse, ServerError> {
+    println!("------------ audio_cn_stream start");
+    let spotify_id = SpotifyId::from_uri(&format!("spotify:track:{}", id))
+        .map_err(|_| ServerError::ParamsError(format!("Track id {} is invalid", id)))?;
+
+    let account_session = &account.session.read().await;
+    println!("------------ audio_cn_stream: Gotten account session");
+    tracing::info!("Gotten account session");
+
+    let audio_item = AudioItem::get_audio_item(&account_session, spotify_id).await?;
+    println!("------------ audio_cn_stream: Gotten audio item");
+    tracing::info!("Gotten audio item");
+
+    let file_id = audio_item.files.get(&FileFormat::OGG_VORBIS_320).unwrap();
+    println!("------------ audio_cn_stream: Gotten audio file");
+    tracing::info!(
+        "Audio file id: {}",
+        file_id
+            .to_base16()
+            .unwrap_or("file_id decode failed".to_owned())
+    );
+
+    let enc_file = AudioFile::open(&account_session, *file_id, 500 * 1024, true).await?;
+    println!("------------ audio_cn_stream: Gotten encrypt file");
+    tracing::info!("Gotten encrypt file");
+
+    let stream_loader_controller = enc_file.get_stream_loader_controller();
+    stream_loader_controller.set_stream_mode();
+
+    let key = account_session
+        .audio_key()
+        .request(spotify_id, *file_id)
+        .await?;
+
+    println!("------------ audio_cn_stream: Gotten audio key");
+    tracing::info!("Gotten audio key: {:?}", key);
 
     let mut decrypted_file = AudioDecrypt::new(key, enc_file);
     decrypted_file.seek(SeekFrom::Start(0xa7))?;
@@ -165,15 +237,59 @@ async fn audio_cn_stream(id: &str, account: &SpotifyAccount) -> Result<HttpRespo
                     }
                     yield Ok(web::BytesMut::from(&buf[..n]).freeze());
                 }
-                Err(e) => yield Err(e),
+                Err(e) => {
+                    yield Err(e);
+                    drop(decrypted_file);
+                    break;
+                },
             }
         }
     }
-    .timeout(Duration::from_secs(1))
-    .take_while(Result::is_ok)
+    .timeout(Duration::from_millis(100))
+    .take_while(|r| {
+        if r.is_err() {
+            println!("------------ audio_cn_stream: stream timeout");
+            tracing::warn!("stream data is timeout");
+        }
+        r.is_ok()
+    })
     .map(|d| d.unwrap());
 
+    println!("------------ audio_cn_stream: Start audio stream");
     tracing::info!("Start audio stream");
 
     Ok(HttpResponse::Ok().content_type("audio/ogg").streaming(s))
+}
+
+/// Retry to get audio content stream
+#[tracing::instrument(skip(account))]
+async fn retry_audio_cn_stream(
+    id: &str,
+    account: &SpotifyAccount,
+    retries: usize,
+) -> Result<HttpResponse, ServerError> {
+    for i in 0..retries {
+        if i > 0 {
+            tracing::warn!("Retry get audio stream by {}", i);
+        }
+
+        match timeout(Duration::from_secs(3), audio_cn_stream(id, account)).await {
+            Ok(result) => return result,
+            Err(err) => {
+                // Reset session
+                // account.reset_session().await;
+                if i + 1 == retries {
+                    return Err(ServerError::AudioError(format!(
+                        "Failed after {} retries. the last error was: {:?}",
+                        retries, err
+                    )));
+                }
+            }
+        }
+    }
+
+    Err(ServerError::AudioError(format!(
+        "Failed after {} retries",
+        retries
+    )))
 }
