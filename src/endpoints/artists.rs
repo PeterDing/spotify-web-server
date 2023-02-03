@@ -4,7 +4,7 @@ use actix_web::{web, HttpResponse};
 
 use rspotify::{
     clients::BaseClient,
-    model::{ArtistId, Id, Page, SimplifiedAlbum},
+    model::{ArtistId, Page, SimplifiedAlbum},
 };
 
 use crate::{
@@ -32,7 +32,7 @@ pub async fn artist(
     let artist_id = ArtistId::from_id(id.as_str())
         .map_err(|_| ServerError::ParamsError(format!("Invalid artist id: {}", id.as_str())))?;
 
-    let result = account.client.artist(&artist_id).await?;
+    let result = account.client.artist(artist_id).await?;
     json_response(&result)
 }
 
@@ -46,8 +46,8 @@ pub async fn artists(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
-
-    let result = account.client.artists(query.ids().iter()).await?;
+    let artist_ids = crate::into_ids!(ArtistId, query.ids());
+    let result = account.client.artists(artist_ids).await?;
     json_response(&result)
 }
 
@@ -67,10 +67,10 @@ pub async fn artist_albums(
         ArtistId::from_id(id.as_str()).map_err(|_| ServerError::ParamsError(format!("{}", id)))?;
 
     if query.limit.is_some() {
-        let page = page_albums(&account, &artist_id, query.limit, query.offset).await?;
+        let page = page_albums(&account, artist_id, query.limit, query.offset).await?;
         json_response(&page)
     } else {
-        let artists = all_albums(&account, &artist_id).await?;
+        let artists = all_albums(&account, artist_id).await?;
         json_response(&artists)
     }
 }
@@ -78,7 +78,7 @@ pub async fn artist_albums(
 /// Artist all albums
 async fn all_albums(
     account: &SpotifyAccount,
-    artist_id: &ArtistId,
+    artist_id: ArtistId<'_>,
 ) -> Result<Vec<SimplifiedAlbum>, ServerError> {
     let mut album_stream = account.client.artist_albums(artist_id, None, None);
     let mut artists = vec![];
@@ -95,7 +95,7 @@ async fn all_albums(
 /// Artist albums by page
 async fn page_albums(
     account: &SpotifyAccount,
-    artist_id: &ArtistId,
+    artist_id: ArtistId<'_>,
     limit: Option<u32>,
     offset: Option<u32>,
 ) -> Result<Page<SimplifiedAlbum>, ServerError> {
@@ -121,7 +121,7 @@ pub async fn artist_top_tracks(
         ArtistId::from_id(id.as_str()).map_err(|_| ServerError::ParamsError(format!("{}", id)))?;
     let tracks = account
         .client
-        .artist_top_tracks(&artist_id, &rspotify::model::Market::FromToken)
+        .artist_top_tracks(artist_id, rspotify::model::Market::FromToken)
         .await?;
     json_response(&tracks)
 }
@@ -140,6 +140,6 @@ pub async fn artist_related_artists(
 
     let artist_id =
         ArtistId::from_id(id.as_str()).map_err(|_| ServerError::ParamsError(format!("{}", id)))?;
-    let artists = account.client.artist_related_artists(&artist_id).await?;
+    let artists = account.client.artist_related_artists(artist_id).await?;
     json_response(&artists)
 }

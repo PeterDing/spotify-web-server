@@ -4,7 +4,7 @@ use actix_web::{web, HttpResponse};
 
 use rspotify::{
     clients::{BaseClient, OAuthClient},
-    model::{AlbumId, Id, Page, SavedAlbum, SimplifiedAlbum, SimplifiedTrack},
+    model::{AlbumId, Page, SavedAlbum, SimplifiedAlbum, SimplifiedTrack},
 };
 
 use crate::{
@@ -32,7 +32,7 @@ pub async fn album(
     let album_id = AlbumId::from_id(id.as_str())
         .map_err(|_| ServerError::ParamsError(format!("Invalid album id: {}", id.as_str())))?;
 
-    let result = account.client.album(&album_id).await?;
+    let result = account.client.album(album_id).await?;
     json_response(&result)
 }
 
@@ -46,8 +46,8 @@ pub async fn albums(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
-
-    let result = account.client.albums(query.ids().iter()).await?;
+    let album_ids = crate::into_ids!(AlbumId, query.ids());
+    let result = account.client.albums(album_ids).await?;
     json_response(&result)
 }
 
@@ -68,10 +68,10 @@ pub async fn album_tracks(
         AlbumId::from_id(id.as_str()).map_err(|_| ServerError::ParamsError(format!("{}", id)))?;
 
     if query.limit.is_some() {
-        let page = page_tracks(&account, &album_id, query.limit, query.offset).await?;
+        let page = page_tracks(&account, album_id, query.limit, query.offset).await?;
         json_response(&page)
     } else {
-        let tracks = all_tracks(&account, &album_id).await?;
+        let tracks = all_tracks(&account, album_id).await?;
         json_response(&tracks)
     }
 }
@@ -79,7 +79,7 @@ pub async fn album_tracks(
 /// Album all tracks
 async fn all_tracks(
     account: &SpotifyAccount,
-    album_id: &AlbumId,
+    album_id: AlbumId<'_>,
 ) -> Result<Vec<SimplifiedTrack>, ServerError> {
     let mut track_stream = account.client.album_track(album_id);
     let mut tracks = vec![];
@@ -96,7 +96,7 @@ async fn all_tracks(
 /// Album tracks by page
 async fn page_tracks(
     account: &SpotifyAccount,
-    album_id: &AlbumId,
+    album_id: AlbumId<'_>,
     limit: Option<u32>,
     offset: Option<u32>,
 ) -> Result<Page<SimplifiedTrack>, ServerError> {
@@ -165,9 +165,10 @@ pub async fn save_albums(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
+    let album_ids = crate::into_ids!(AlbumId, query.ids());
     account
         .client
-        .current_user_saved_albums_add(query.ids().iter())
+        .current_user_saved_albums_add(album_ids)
         .await?;
     ok_response()
 }
@@ -183,9 +184,10 @@ pub async fn delete_albums(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
+    let album_ids = crate::into_ids!(AlbumId, query.ids());
     account
         .client
-        .current_user_saved_albums_delete(query.ids().iter())
+        .current_user_saved_albums_delete(album_ids)
         .await?;
     ok_response()
 }

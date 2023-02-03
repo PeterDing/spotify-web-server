@@ -4,7 +4,7 @@ use actix_web::{web, HttpResponse};
 
 use rspotify::{
     clients::BaseClient,
-    model::{EpisodeId, Id, Market},
+    model::{EpisodeId, Market},
     ClientError,
 };
 
@@ -32,7 +32,7 @@ pub async fn episode(
     let episode_id = EpisodeId::from_id(id.as_str())
         .map_err(|_| ServerError::ParamsError(format!("Invalid episode id: {}", id.as_str())))?;
 
-    let result = account.client.get_an_episode(&episode_id, None).await?;
+    let result = account.client.get_an_episode(episode_id, None).await?;
     json_response(&result)
 }
 
@@ -46,9 +46,10 @@ pub async fn episodes(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
+    let episode_ids = crate::into_ids!(EpisodeId, query.ids());
     let result = account
         .client
-        .get_several_episodes(query.ids().iter(), None)
+        .get_several_episodes(episode_ids, None)
         .await?;
     json_response(&result)
 }
@@ -82,8 +83,8 @@ async fn page_saved_episodes(
     let limit = limit.map(|s| s.to_string());
     let offset = offset.map(|s| s.to_string());
     let mut params = HashMap::new();
-    if let Some(v) = market.map(|x| x.as_ref()) {
-        params.insert("market", v);
+    if let Some(v) = market {
+        params.insert("market", (*v).into());
     }
     if let Some(v) = limit.as_deref() {
         params.insert("limit", v);

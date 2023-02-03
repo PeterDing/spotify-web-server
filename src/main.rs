@@ -10,8 +10,7 @@ use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 
 use spotify_web_server::{app_store::AppStore, cmd::Cmd, routes::route};
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn async_main() -> std::io::Result<()> {
     let cmd = Cmd::parse();
     let cache_dir = cmd.cache_dir.clone();
 
@@ -50,4 +49,13 @@ async fn main() -> std::io::Result<()> {
     .bind((cmd.bind.as_str(), cmd.port))?
     .run()
     .await
+}
+
+pub fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(async_main())?;
+    Ok(())
 }

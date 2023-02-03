@@ -1,7 +1,9 @@
 use rspotify::model::{
-    EpisodeId, Id, IncludeExternal, Market, PlayableId, RecommendationsAttribute, SearchType,
+    ArtistId, EpisodeId, IncludeExternal, Market, PlayableId, RecommendationsAttribute, SearchType,
     TrackId,
 };
+
+use crate::errors::ServerError;
 
 #[derive(Debug, serde::Deserialize)]
 pub struct LoginData {
@@ -26,12 +28,18 @@ pub struct SearchData {
     pub include_external: Option<IncludeExternal>,
 }
 
-pub fn into_ids<T: Id>(s: &str) -> Vec<T> {
-    s.split(',')
-        .map(T::from_id)
-        .filter(|id| id.is_ok())
-        .map(|id| id.unwrap())
-        .collect()
+#[macro_export]
+macro_rules! into_ids {
+    ($id_type:ident, $ids:expr) => {{
+        let mut id_vec = vec![];
+        for id in $ids {
+            id_vec.push(
+                $id_type::from_id(id)
+                    .map_err(|_| ServerError::ParamsError(format!("{id} is invalid")))?,
+            );
+        }
+        id_vec
+    }};
 }
 
 /// Ids Query Data
@@ -41,8 +49,8 @@ pub struct IdsData {
 }
 
 impl IdsData {
-    pub fn ids<T: Id>(&self) -> Vec<T> {
-        into_ids(&self.ids)
+    pub fn ids(&self) -> Vec<&str> {
+        self.ids.split(',').collect()
     }
 }
 
@@ -106,16 +114,26 @@ pub struct RecommendationsData {
 }
 
 impl RecommendationsData {
-    pub fn seed_artists<T: Id>(&self) -> Option<Vec<T>> {
-        self.seed_artists.as_ref().map(|sa| into_ids(sa))
+    pub fn seed_artists(&self) -> Result<Option<Vec<ArtistId>>, ServerError> {
+        if let Some(sa) = self.seed_artists.as_ref() {
+            let ids = into_ids!(ArtistId, sa.split(','));
+            Ok(Some(ids))
+        } else {
+            Ok(None)
+        }
     }
 
     pub fn seed_genres(&self) -> Option<Vec<&str>> {
         self.seed_genres.as_ref().map(|sa| sa.split(',').collect())
     }
 
-    pub fn seed_tracks<T: Id>(&self) -> Option<Vec<T>> {
-        self.seed_tracks.as_ref().map(|sa| into_ids(sa))
+    pub fn seed_tracks(&self) -> Result<Option<Vec<TrackId>>, ServerError> {
+        if let Some(st) = self.seed_tracks.as_ref() {
+            let ids = into_ids!(TrackId, st.split(','));
+            Ok(Some(ids))
+        } else {
+            Ok(None)
+        }
     }
 
     pub fn limit(&self) -> Option<u32> {
@@ -291,7 +309,7 @@ pub struct PlaylistAddItemQueryData {
 }
 
 impl PlaylistAddItemQueryData {
-    pub fn items(&self) -> Vec<Box<dyn PlayableId>> {
+    pub fn items(&self) -> Vec<PlayableId> {
         self.uris
             .split(',')
             .filter(|id_or_uri| {
@@ -299,10 +317,9 @@ impl PlaylistAddItemQueryData {
             })
             .map(|id_or_uri| {
                 if id_or_uri.starts_with("spotify:track:") {
-                    TrackId::from_id_or_uri(id_or_uri).map(|id| Box::new(id) as Box<dyn PlayableId>)
+                    TrackId::from_id_or_uri(id_or_uri).map(|id| PlayableId::Track(id))
                 } else {
-                    EpisodeId::from_id_or_uri(id_or_uri)
-                        .map(|id| Box::new(id) as Box<dyn PlayableId>)
+                    EpisodeId::from_id_or_uri(id_or_uri).map(|id| PlayableId::Episode(id))
                 }
             })
             .filter(|id| id.is_ok())
@@ -318,7 +335,7 @@ pub struct PlaylistAddItemJsonData {
 }
 
 impl PlaylistAddItemJsonData {
-    pub fn items(&self) -> Vec<Box<dyn PlayableId>> {
+    pub fn items(&self) -> Vec<PlayableId> {
         self.uris
             .iter()
             .filter(|id_or_uri| {
@@ -326,10 +343,9 @@ impl PlaylistAddItemJsonData {
             })
             .map(|id_or_uri| {
                 if id_or_uri.starts_with("spotify:track:") {
-                    TrackId::from_id_or_uri(id_or_uri).map(|id| Box::new(id) as Box<dyn PlayableId>)
+                    TrackId::from_id_or_uri(id_or_uri).map(|id| PlayableId::Track(id))
                 } else {
-                    EpisodeId::from_id_or_uri(id_or_uri)
-                        .map(|id| Box::new(id) as Box<dyn PlayableId>)
+                    EpisodeId::from_id_or_uri(id_or_uri).map(|id| PlayableId::Episode(id))
                 }
             })
             .filter(|id| id.is_ok())

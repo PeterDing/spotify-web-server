@@ -4,7 +4,7 @@ use actix_web::{web, HttpResponse};
 
 use rspotify::{
     clients::{BaseClient, OAuthClient},
-    model::{Id, Page, Show, ShowId, SimplifiedEpisode},
+    model::{Page, Show, ShowId, SimplifiedEpisode},
 };
 
 use crate::{
@@ -31,7 +31,7 @@ pub async fn show(
     let show_id = ShowId::from_id(id.as_str())
         .map_err(|_| ServerError::ParamsError(format!("Invalid show id: {}", id.as_str())))?;
 
-    let result = account.client.get_a_show(&show_id, None).await?;
+    let result = account.client.get_a_show(show_id, None).await?;
     json_response(&result)
 }
 
@@ -45,10 +45,8 @@ pub async fn shows(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
-    let result = account
-        .client
-        .get_several_shows(query.ids().iter(), None)
-        .await?;
+    let show_ids = crate::into_ids!(ShowId, query.ids());
+    let result = account.client.get_several_shows(show_ids, None).await?;
     json_response(&result)
 }
 
@@ -67,10 +65,10 @@ pub async fn show_episodes(
         ShowId::from_id(id.as_str()).map_err(|_| ServerError::ParamsError(format!("{}", id)))?;
 
     if query.limit.is_some() {
-        let page = page_episodes(&account, &show_id, query.limit, query.offset).await?;
+        let page = page_episodes(&account, show_id, query.limit, query.offset).await?;
         json_response(&page)
     } else {
-        let episodes = all_episodes(&account, &show_id).await?;
+        let episodes = all_episodes(&account, show_id).await?;
         json_response(&episodes)
     }
 }
@@ -78,7 +76,7 @@ pub async fn show_episodes(
 /// Show all episodes
 async fn all_episodes(
     account: &SpotifyAccount,
-    show_id: &ShowId,
+    show_id: ShowId<'_>,
 ) -> Result<Vec<SimplifiedEpisode>, ServerError> {
     let mut episode_stream = account.client.get_shows_episodes(show_id, None);
     let mut episodes = vec![];
@@ -95,7 +93,7 @@ async fn all_episodes(
 /// Show episodes by page
 async fn page_episodes(
     account: &SpotifyAccount,
-    show_id: &ShowId,
+    show_id: ShowId<'_>,
     limit: Option<u32>,
     offset: Option<u32>,
 ) -> Result<Page<SimplifiedEpisode>, ServerError> {
@@ -159,7 +157,8 @@ pub async fn save_shows(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
-    account.client.save_shows(query.ids().iter()).await?;
+    let show_ids = crate::into_ids!(ShowId, query.ids());
+    account.client.save_shows(show_ids).await?;
     ok_response()
 }
 
@@ -173,9 +172,10 @@ pub async fn delete_shows(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
+    let show_ids = crate::into_ids!(ShowId, query.ids());
     account
         .client
-        .remove_users_saved_shows(query.ids().iter(), None)
+        .remove_users_saved_shows(show_ids, None)
         .await?;
     ok_response()
 }

@@ -6,7 +6,7 @@ use actix_web::{web, HttpResponse};
 
 use rspotify::{
     clients::{BaseClient, OAuthClient},
-    model::{Id, Page, PlaylistId, PlaylistItem, SimplifiedPlaylist, UserId},
+    model::{Page, PlaylistId, PlaylistItem, SimplifiedPlaylist, UserId},
 };
 
 use crate::{
@@ -39,7 +39,7 @@ pub async fn playlist(
         .map_err(|_| ServerError::ParamsError(format!("Invalid playlist id: {}", id.as_str())))?;
     let fields = fields_query.fields.as_deref();
 
-    let result = account.client.playlist(&playlist_id, fields, None).await?;
+    let result = account.client.playlist(playlist_id, fields, None).await?;
     json_response(&result)
 }
 
@@ -62,7 +62,7 @@ pub async fn change_playlist_detail(
     let result = account
         .client
         .playlist_change_detail(
-            &playlist_id,
+            playlist_id,
             json.name.as_deref(),
             json.public,
             json.description.as_deref(),
@@ -90,10 +90,10 @@ pub async fn playlist_tracks(
     let fields = fields_query.fields.as_deref();
 
     if query.limit.is_some() {
-        let page = page_tracks(&account, &playlist_id, fields, query.limit, query.offset).await?;
+        let page = page_tracks(&account, playlist_id, fields, query.limit, query.offset).await?;
         json_response(&page)
     } else {
-        let tracks = all_tracks(&account, &playlist_id, fields).await?;
+        let tracks = all_tracks(&account, playlist_id, fields).await?;
         json_response(&tracks)
     }
 }
@@ -101,7 +101,7 @@ pub async fn playlist_tracks(
 /// Playlist all tracks
 async fn all_tracks(
     account: &SpotifyAccount,
-    playlist_id: &PlaylistId,
+    playlist_id: PlaylistId<'_>,
     fields: Option<&str>,
 ) -> Result<Vec<PlaylistItem>, ServerError> {
     let mut track_stream = account.client.playlist_items(playlist_id, fields, None);
@@ -119,7 +119,7 @@ async fn all_tracks(
 /// Playlist tracks by page
 async fn page_tracks(
     account: &SpotifyAccount,
-    playlist_id: &PlaylistId,
+    playlist_id: PlaylistId<'_>,
     fields: Option<&str>,
     limit: Option<u32>,
     offset: Option<u32>,
@@ -152,7 +152,7 @@ pub async fn playlist_add_items(
         let result = account
             .client
             .playlist_add_items(
-                &playlist_id,
+                playlist_id,
                 items.iter().map(|item| item.as_ref()),
                 query.position,
             )
@@ -164,7 +164,7 @@ pub async fn playlist_add_items(
         let result = account
             .client
             .playlist_add_items(
-                &playlist_id,
+                playlist_id,
                 items.iter().map(|item| item.as_ref()),
                 json.position,
             )
@@ -239,10 +239,10 @@ pub async fn user_playlists(
         UserId::from_id(id.as_str()).map_err(|_| ServerError::ParamsError(format!("{}", id)))?;
 
     if query.limit.is_some() {
-        let page = page_user_playlists(&account, &user_id, query.limit, query.offset).await?;
+        let page = page_user_playlists(&account, user_id, query.limit, query.offset).await?;
         json_response(&page)
     } else {
-        let playlists = all_user_playlists(&account, &user_id).await?;
+        let playlists = all_user_playlists(&account, user_id).await?;
         json_response(&playlists)
     }
 }
@@ -250,7 +250,7 @@ pub async fn user_playlists(
 /// Current user all saved playlists
 async fn all_user_playlists(
     account: &SpotifyAccount,
-    user_id: &UserId,
+    user_id: UserId<'_>,
 ) -> Result<Vec<SimplifiedPlaylist>, ServerError> {
     let mut playlist_stream = account.client.user_playlists(user_id);
     let mut playlists = vec![];
@@ -267,13 +267,13 @@ async fn all_user_playlists(
 /// Current user saved playlists by page
 async fn page_user_playlists(
     account: &SpotifyAccount,
-    user_id: &UserId,
+    user_id: UserId<'_>,
     limit: Option<u32>,
     offset: Option<u32>,
 ) -> Result<Page<SimplifiedPlaylist>, ServerError> {
     let page = account
         .client
-        .user_playlists_manual(&user_id, limit, offset)
+        .user_playlists_manual(user_id, limit, offset)
         .await?;
     Ok(page)
 }
@@ -298,7 +298,7 @@ pub async fn follow_playlist(
         Some(true)
     };
 
-    account.client.playlist_follow(&playlist_id, public).await?;
+    account.client.playlist_follow(playlist_id, public).await?;
     ok_response()
 }
 
@@ -316,7 +316,7 @@ pub async fn unfollow_playlist(
     let playlist_id = PlaylistId::from_id(id.as_str())
         .map_err(|_| ServerError::ParamsError(format!("Invalid playlist id: {}", id.as_str())))?;
 
-    account.client.playlist_unfollow(&playlist_id).await?;
+    account.client.playlist_unfollow(playlist_id).await?;
     ok_response()
 }
 
@@ -348,7 +348,7 @@ pub async fn create_playlist(
     let result = account
         .client
         .user_playlist_create(
-            &user_id,
+            user_id,
             name,
             json.public,
             json.collaborative,
@@ -386,7 +386,7 @@ pub async fn featured_playlists(
         .featured_playlists(
             country_locate.locale.as_deref(),
             None,
-            timestamp.as_ref(),
+            timestamp,
             limit_offset.limit,
             limit_offset.offset,
         )

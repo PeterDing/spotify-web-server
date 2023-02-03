@@ -16,11 +16,12 @@ path = "src/main.rs"
 [dependencies]
 # Async
 futures = "0.3"
+futures-util = "0.3"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "signal", "sync", "process", "time"] }
 tokio-stream = "0.1"
 async-stream = "0.3"
 actix-web = { version = "4", features = ["secure-cookies"] }
-actix-session = { version = "0.6", features = ["cookie-session"] }
+actix-session = { version = "0.7", features = ["cookie-session"] }
 
 # Spotify Api
 librespot = { version = "0.4", default-features = false }
@@ -34,8 +35,8 @@ thiserror = "1"
 anyhow = "1"
 percent-encoding = "2"
 url = "2"
-toml = "0.5"
-clap = { version = "3", features = ["derive", "cargo"] }
+toml = "0.7"
+clap = { version = "4", features = ["derive", "cargo"] }
 
 # Crypto
 aes = "0.8"
@@ -44,7 +45,7 @@ sha2 = "0.10"
 
 # Tracing
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["registry", "env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["default", "local-time", "registry", "env-filter"] }
 tracing-bunyan-formatter = "0.3"
 tracing-appender = "0.2"
-tracing-actix-web = "0.5"
+tracing-actix-web = "0.7"

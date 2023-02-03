@@ -1,9 +1,6 @@
 use actix_web::{web, HttpResponse};
 
-use rspotify::{
-    clients::BaseClient,
-    model::{ArtistId, TrackId},
-};
+use rspotify::clients::BaseClient;
 
 use crate::{
     app_store::AppStore,
@@ -26,9 +23,9 @@ pub async fn recommendations(
         .client
         .recommendations(
             query.attributes(),
-            query.seed_artists::<ArtistId>().as_ref(),
+            query.seed_artists()?,
             query.seed_genres(),
-            query.seed_tracks::<TrackId>().as_ref(),
+            query.seed_tracks()?,
             None,
             query.limit(),
         )

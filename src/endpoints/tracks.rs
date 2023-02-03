@@ -4,7 +4,7 @@ use actix_web::{web, HttpResponse};
 
 use rspotify::{
     clients::{BaseClient, OAuthClient},
-    model::{Id, Page, SavedTrack, TrackId},
+    model::{Page, SavedTrack, TrackId},
 };
 
 use crate::{
@@ -32,7 +32,7 @@ pub async fn track(
     let track_id = TrackId::from_id(id.as_str())
         .map_err(|_| ServerError::ParamsError(format!("Invalid track id: {}", id.as_str())))?;
 
-    let result = account.client.track(&track_id).await?;
+    let result = account.client.track(track_id).await?;
     json_response(&result)
 }
 
@@ -46,8 +46,8 @@ pub async fn tracks(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
-
-    let result = account.client.tracks(query.ids().iter(), None).await?;
+    let track_ids = crate::into_ids!(TrackId, query.ids());
+    let result = account.client.tracks(track_ids, None).await?;
     json_response(&result)
 }
 
@@ -109,9 +109,10 @@ pub async fn save_tracks(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
+    let track_ids = crate::into_ids!(TrackId, query.ids());
     account
         .client
-        .current_user_saved_tracks_add(query.ids().iter())
+        .current_user_saved_tracks_add(track_ids)
         .await?;
     ok_response()
 }
@@ -127,9 +128,10 @@ pub async fn delete_tracks(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
+    let track_ids = crate::into_ids!(TrackId, query.ids());
     account
         .client
-        .current_user_saved_tracks_delete(query.ids().iter())
+        .current_user_saved_tracks_delete(track_ids)
         .await?;
     ok_response()
 }
@@ -148,7 +150,7 @@ pub async fn track_features(
     let track_id = TrackId::from_id(id.as_str())
         .map_err(|_| ServerError::ParamsError(format!("Invalid track id: {}", id.as_str())))?;
 
-    let result = account.client.track_features(&track_id).await?;
+    let result = account.client.track_features(track_id).await?;
     json_response(&result)
 }
 
@@ -162,8 +164,8 @@ pub async fn tracks_features(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
-
-    let result = account.client.tracks_features(query.ids().iter()).await?;
+    let track_ids = crate::into_ids!(TrackId, query.ids());
+    let result = account.client.tracks_features(track_ids).await?;
     json_response(&result)
 }
 
@@ -183,6 +185,6 @@ pub async fn track_analysis(
     let track_id = TrackId::from_id(id.as_str())
         .map_err(|_| ServerError::ParamsError(format!("Invalid track id: {}", id.as_str())))?;
 
-    let result = account.client.track_analysis(&track_id).await?;
+    let result = account.client.track_analysis(track_id).await?;
     json_response(&result)
 }

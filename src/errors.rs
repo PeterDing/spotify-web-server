@@ -30,6 +30,8 @@ pub enum ServerError {
     IOError(#[from] std::io::Error),
     #[error("Audio Error: {0}")]
     AudioError(String),
+    #[error("Librespot Error: {0}")]
+    LibrespotError(String),
 }
 
 impl From<MercuryError> for ServerError {

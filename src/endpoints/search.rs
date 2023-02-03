@@ -29,9 +29,9 @@ pub async fn search(
         .client
         .search(
             &query.q,
-            &query.type_,
-            query.market.as_ref(),
-            query.include_external.as_ref(),
+            query.type_,
+            query.market,
+            query.include_external.clone(),
             limit_offset.limit,
             limit_offset.offset,
         )

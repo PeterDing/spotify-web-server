@@ -63,6 +63,7 @@ impl SpotifyAccount {
         };
         let (session, credentials) =
             Session::connect(config, credentials.clone(), Some(cache.clone()), true).await?;
+
         let client: AuthCodeSpotify = AuthCodeSpotify::default();
         let secret: [u8; 16] = rand::random();
         let account = SpotifyAccount {
@@ -134,6 +135,7 @@ impl SpotifyAccount {
             let fut = Session::connect(config, self.credentials.clone(), self.cache.clone(), true);
             if let Ok(Ok((new_session, _))) = timeout(Duration::from_secs(5), fut).await {
                 let mut session = self.session.write().await;
+                session.shutdown();
                 *session = new_session;
                 if let Ok(token) = keymaster::get_token(&session, client_id, scope).await {
                     self.set_token(token).await.unwrap();
