@@ -18,7 +18,7 @@ pub async fn markets(
     let account = app_store.authorize(username).await?;
 
     let url = "markets";
-    let result = account.client.endpoint_get(url, &Query::new()).await?;
+    let result = account.client.api_get(url, &Query::new()).await?;
 
     ok_with_body_response(result)
 }

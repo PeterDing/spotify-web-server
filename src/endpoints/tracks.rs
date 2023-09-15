@@ -28,11 +28,12 @@ pub async fn track(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
+    let id_str = id.into_inner();
 
-    let track_id = TrackId::from_id(id.as_str())
-        .map_err(|_| ServerError::ParamsError(format!("Invalid track id: {}", id.as_str())))?;
+    let track_id = TrackId::from_id(id_str.as_str())
+        .map_err(|_| ServerError::ParamsError(format!("Invalid track id: {}", id_str)))?;
 
-    let result = account.client.track(track_id).await?;
+    let result = account.client.track(track_id, None).await?;
     json_response(&result)
 }
 
@@ -146,9 +147,10 @@ pub async fn track_features(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
+    let id_str = id.into_inner();
 
-    let track_id = TrackId::from_id(id.as_str())
-        .map_err(|_| ServerError::ParamsError(format!("Invalid track id: {}", id.as_str())))?;
+    let track_id = TrackId::from_id(id_str.as_str())
+        .map_err(|_| ServerError::ParamsError(format!("Invalid track id: {}", id_str)))?;
 
     let result = account.client.track_features(track_id).await?;
     json_response(&result)
@@ -181,9 +183,10 @@ pub async fn track_analysis(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
+    let id_str = id.into_inner();
 
-    let track_id = TrackId::from_id(id.as_str())
-        .map_err(|_| ServerError::ParamsError(format!("Invalid track id: {}", id.as_str())))?;
+    let track_id = TrackId::from_id(id_str.as_str())
+        .map_err(|_| ServerError::ParamsError(format!("Invalid track id: {}", id_str)))?;
 
     let result = account.client.track_analysis(track_id).await?;
     json_response(&result)

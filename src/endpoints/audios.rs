@@ -29,6 +29,8 @@ const SPOTIFY_OGG_HEADER_END: u64 = 0xa7;
 
 /// Path: GET `/audio/{id}`
 /// Audio files information
+///
+/// `id` can be `spotify:track:{..}` or `spotify:episode:{..}`
 #[tracing::instrument(skip(app_store, session))]
 pub async fn audio(
     id: web::Path<String>,
@@ -38,8 +40,9 @@ pub async fn audio(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
 
-    let spotify_id = SpotifyId::from_uri(&format!("spotify:track:{}", id.as_str()))
-        .map_err(|_| ServerError::ParamsError(format!("Track id {} is invalid", id.as_str())))?;
+    // let spotify_id = SpotifyId::from_uri(&format!("spotify:track:{}", id.as_str()))
+    let spotify_id = SpotifyId::from_uri(id.as_str())
+        .map_err(|_| ServerError::ParamsError(format!("Spotify id {} is invalid", id.as_str())))?;
 
     let account_session = &account.session.read().await;
     let result = AudioItem::get_audio_item(&account_session, spotify_id).await?;
@@ -55,6 +58,8 @@ struct UserNameTrackId {
 
 /// Path: GET `/audio-uri/{id}`
 /// Audio direct uri which returns a uri to the track audio stream
+///
+/// `id` can be `spotify:track:{..}` or `spotify:episode:{..}`
 #[tracing::instrument(skip(app_store, session))]
 pub async fn audio_uri(
     id: web::Path<String>,
@@ -115,6 +120,8 @@ pub async fn audio_stream_with_sign(
 
 /// Path: GET `/audio-stream/{id}`
 /// The track audio stream without sign but needs Cookies
+///
+/// `id` can be `spotify:track:{..}` or `spotify:episode:{..}`
 #[tracing::instrument(skip(app_store, session))]
 pub async fn audio_stream(
     id: web::Path<String>,
@@ -129,13 +136,15 @@ pub async fn audio_stream(
 }
 
 /// Audio content stream
+///
+/// `id` can be `spotify:track:{..}` or `spotify:episode:{..}`
 #[tracing::instrument(skip(account))]
 async fn audio_cn_without_stream(
     id: &str,
     account: &SpotifyAccount,
 ) -> Result<HttpResponse, ServerError> {
     println!("------------ audio_cn_without_stream start");
-    let spotify_id = SpotifyId::from_uri(&format!("spotify:track:{}", id))
+    let spotify_id = SpotifyId::from_uri(id)
         .map_err(|_| ServerError::ParamsError(format!("Track id {} is invalid", id)))?;
 
     let account_session = &account.session.read().await;
@@ -190,13 +199,15 @@ async fn audio_cn_without_stream(
 }
 
 /// Audio content stream
+///
+/// `id` can be `spotify:track:{..}` or `spotify:episode:{..}`
 #[tracing::instrument(skip(account))]
 async fn audio_cn_stream(id: &str, account: &SpotifyAccount) -> Result<HttpResponse, ServerError> {
     use tokio_stream::StreamExt;
 
     println!("------------ audio_cn_stream start");
-    let spotify_id = SpotifyId::from_uri(&format!("spotify:track:{}", id))
-        .map_err(|_| ServerError::ParamsError(format!("Track id {} is invalid", id)))?;
+    let spotify_id = SpotifyId::from_uri(id)
+        .map_err(|_| ServerError::ParamsError(format!("Spotify id {} is invalid", id)))?;
 
     let account_session = &account.session.read().await;
     println!("------------ audio_cn_stream: Gotten account session");
@@ -336,6 +347,8 @@ async fn audio_cn_stream(id: &str, account: &SpotifyAccount) -> Result<HttpRespo
 }
 
 /// Retry to get audio content stream
+///
+/// `id` can be `spotify:track:{..}` or `spotify:episode:{..}`
 #[tracing::instrument(skip(account))]
 async fn retry_audio_cn_stream(
     id: &str,

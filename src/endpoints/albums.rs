@@ -28,11 +28,12 @@ pub async fn album(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
+    let id_str = id.into_inner();
 
-    let album_id = AlbumId::from_id(id.as_str())
-        .map_err(|_| ServerError::ParamsError(format!("Invalid album id: {}", id.as_str())))?;
+    let album_id = AlbumId::from_id(id_str.as_str())
+        .map_err(|_| ServerError::ParamsError(format!("Invalid album id: {}", id_str)))?;
 
-    let result = account.client.album(album_id).await?;
+    let result = account.client.album(album_id, None).await?;
     json_response(&result)
 }
 
@@ -47,7 +48,7 @@ pub async fn albums(
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
     let album_ids = crate::into_ids!(AlbumId, query.ids());
-    let result = account.client.albums(album_ids).await?;
+    let result = account.client.albums(album_ids, None).await?;
     json_response(&result)
 }
 
@@ -63,9 +64,10 @@ pub async fn album_tracks(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
+    let id_str = id.into_inner();
 
-    let album_id =
-        AlbumId::from_id(id.as_str()).map_err(|_| ServerError::ParamsError(format!("{}", id)))?;
+    let album_id = AlbumId::from_id(id_str.as_str())
+        .map_err(|_| ServerError::ParamsError(format!("{}", id_str)))?;
 
     if query.limit.is_some() {
         let page = page_tracks(&account, album_id, query.limit, query.offset).await?;
@@ -81,7 +83,7 @@ async fn all_tracks(
     account: &SpotifyAccount,
     album_id: AlbumId<'_>,
 ) -> Result<Vec<SimplifiedTrack>, ServerError> {
-    let mut track_stream = account.client.album_track(album_id);
+    let mut track_stream = account.client.album_track(album_id, None);
     let mut tracks = vec![];
     while let Some(item) = track_stream.next().await {
         if item.is_err() {
@@ -102,7 +104,7 @@ async fn page_tracks(
 ) -> Result<Page<SimplifiedTrack>, ServerError> {
     let page = account
         .client
-        .album_track_manual(album_id, limit, offset)
+        .album_track_manual(album_id, None, limit, offset)
         .await?;
     Ok(page)
 }

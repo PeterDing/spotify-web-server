@@ -34,9 +34,10 @@ pub async fn playlist(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
+    let id_str = id.into_inner();
 
-    let playlist_id = PlaylistId::from_id(id.as_str())
-        .map_err(|_| ServerError::ParamsError(format!("Invalid playlist id: {}", id.as_str())))?;
+    let playlist_id = PlaylistId::from_id(id_str.as_str())
+        .map_err(|_| ServerError::ParamsError(format!("Invalid playlist id: {}", id_str)))?;
     let fields = fields_query.fields.as_deref();
 
     let result = account.client.playlist(playlist_id, fields, None).await?;
@@ -55,9 +56,10 @@ pub async fn change_playlist_detail(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
+    let id_str = id.into_inner();
 
-    let playlist_id = PlaylistId::from_id(id.as_str())
-        .map_err(|_| ServerError::ParamsError(format!("Invalid playlist id: {}", id.as_str())))?;
+    let playlist_id = PlaylistId::from_id(id_str.as_str())
+        .map_err(|_| ServerError::ParamsError(format!("Invalid playlist id: {}", id_str)))?;
 
     let result = account
         .client
@@ -84,9 +86,10 @@ pub async fn playlist_tracks(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
+    let id_str = id.into_inner();
 
-    let playlist_id = PlaylistId::from_id(id.as_str())
-        .map_err(|_| ServerError::ParamsError(format!("{}", id)))?;
+    let playlist_id = PlaylistId::from_id(id_str.as_str())
+        .map_err(|_| ServerError::ParamsError(format!("{}", id_str)))?;
     let fields = fields_query.fields.as_deref();
 
     if query.limit.is_some() {
@@ -143,9 +146,10 @@ pub async fn playlist_add_items(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
+    let id_str = id.into_inner();
 
-    let playlist_id = PlaylistId::from_id(id.as_str())
-        .map_err(|_| ServerError::ParamsError(format!("{}", id)))?;
+    let playlist_id = PlaylistId::from_id(id_str.as_str())
+        .map_err(|_| ServerError::ParamsError(format!("{}", id_str)))?;
 
     if !query.uris.is_empty() {
         let items = query.items();
@@ -289,9 +293,10 @@ pub async fn follow_playlist(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
+    let id_str = id.into_inner();
 
-    let playlist_id = PlaylistId::from_id(id.as_str())
-        .map_err(|_| ServerError::ParamsError(format!("Invalid playlist id: {}", id.as_str())))?;
+    let playlist_id = PlaylistId::from_id(id_str.as_str())
+        .map_err(|_| ServerError::ParamsError(format!("Invalid playlist id: {}", id_str)))?;
     let public = if let Ok(p) = serde_json::from_slice::<PublicData>(&body[..]) {
         Some(p.public)
     } else {
@@ -312,9 +317,10 @@ pub async fn unfollow_playlist(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
+    let id_str = id.into_inner();
 
-    let playlist_id = PlaylistId::from_id(id.as_str())
-        .map_err(|_| ServerError::ParamsError(format!("Invalid playlist id: {}", id.as_str())))?;
+    let playlist_id = PlaylistId::from_id(id_str.as_str())
+        .map_err(|_| ServerError::ParamsError(format!("Invalid playlist id: {}", id_str)))?;
 
     account.client.playlist_unfollow(playlist_id).await?;
     ok_response()
@@ -332,9 +338,10 @@ pub async fn create_playlist(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
+    let id_str = id.into_inner();
 
-    let user_id = UserId::from_id(id.as_str())
-        .map_err(|_| ServerError::ParamsError(format!("Invalid user id: {}", id.as_str())))?;
+    let user_id = UserId::from_id(id_str.as_str())
+        .map_err(|_| ServerError::ParamsError(format!("Invalid user id: {}", id_str)))?;
 
     let name = if let Some(name) = &json.name {
         if name.is_empty() {

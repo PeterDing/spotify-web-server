@@ -28,9 +28,10 @@ pub async fn episode(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
+    let id_str = id.into_inner();
 
-    let episode_id = EpisodeId::from_id(id.as_str())
-        .map_err(|_| ServerError::ParamsError(format!("Invalid episode id: {}", id.as_str())))?;
+    let episode_id = EpisodeId::from_id(id_str.as_str())
+        .map_err(|_| ServerError::ParamsError(format!("Invalid episode id: {}", id_str)))?;
 
     let result = account.client.get_an_episode(episode_id, None).await?;
     json_response(&result)
@@ -92,7 +93,7 @@ async fn page_saved_episodes(
     if let Some(v) = offset.as_deref() {
         params.insert("offset", v);
     }
-    account.client.endpoint_get("me/episodes", &params).await
+    account.client.api_get("me/episodes", &params).await
 }
 
 /// Path: PUT `/me/episodes`
@@ -110,7 +111,7 @@ pub async fn save_episodes(
 
     let result = account
         .client
-        .endpoint_put("me/episodes", &serde_json::Value::from(ids))
+        .api_put("me/episodes", &serde_json::Value::from(ids))
         .await?;
 
     json_response(&result)
@@ -131,7 +132,7 @@ pub async fn delete_episodes(
 
     let result = account
         .client
-        .endpoint_delete("me/episodes", &serde_json::Value::from(ids))
+        .api_delete("me/episodes", &serde_json::Value::from(ids))
         .await?;
 
     json_response(&result)

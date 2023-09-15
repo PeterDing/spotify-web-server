@@ -37,10 +37,11 @@ pub async fn user(
 ) -> Result<HttpResponse, ServerError> {
     let username = session.get_username()?;
     let account = app_store.authorize(username).await?;
+    let id_str = id.into_inner();
 
     let result = account
         .client
-        .endpoint_get(&format!("users/{}", id), &Query::new())
+        .api_get(&format!("users/{}", id_str), &Query::new())
         .await?;
     ok_with_body_response(result)
 }

@@ -305,7 +305,7 @@ pub struct TimestampData {
 #[derive(Debug, serde::Deserialize)]
 pub struct PlaylistAddItemQueryData {
     pub uris: String,
-    pub position: Option<i32>,
+    pub position: Option<u32>,
 }
 
 impl PlaylistAddItemQueryData {
@@ -331,7 +331,7 @@ impl PlaylistAddItemQueryData {
 #[derive(Debug, serde::Deserialize)]
 pub struct PlaylistAddItemJsonData {
     pub uris: Vec<String>,
-    pub position: Option<i32>,
+    pub position: Option<u32>,
 }
 
 impl PlaylistAddItemJsonData {
